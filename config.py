@@ -15,6 +15,6 @@ USER_CITY = os.getenv("USER_CITY")
 #--------------
 # PATHS
 #--------------
-
+#TODO: you will need to provide your own mbox file
 APP_PATH = Path(__file__).resolve().parent
 MAILBOX_PATH = APP_PATH / "raw.mbox"
