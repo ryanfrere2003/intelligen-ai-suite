@@ -5,9 +5,9 @@ import re
 import pandas as pd
 from bs4 import BeautifulSoup
 
-#from ..config import MAILBOX_PATH
+from config import MAILBOX_PATH
 
-mailboxdata = mailbox.mbox("raw.mbox")
+mailboxdata = mailbox.mbox(MAILBOX_PATH)
 
 emails = []
 
