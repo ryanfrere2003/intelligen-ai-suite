@@ -3,239 +3,132 @@ import sqlite3
 DATABASE_SCHEMA = {
 
     "Emails": """
-              CREATE TABLE IF NOT EXISTS Emails
-              (
+    CREATE TABLE IF NOT EXISTS Emails (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-                  id
-                  INTEGER
-                  PRIMARY
-                  KEY
-                  AUTOINCREMENT,
+        message_id TEXT UNIQUE,
 
-                  message_id
-                  TEXT
-                  UNIQUE,
+        subject TEXT NOT NULL,
 
-                  subject
-                  TEXT
-                  NOT
-                  NULL,
+        sender_name TEXT,
 
-                  sender_name
-                  TEXT,
+        sender_email TEXT NOT NULL,
 
-                  sender_email
-                  TEXT
-                  NOT
-                  NULL,
+        sender_domain TEXT,
 
-                  sender_domain
-                  TEXT,
+        received_date DATETIME,
 
-                  received_date
-                  DATETIME,
+        body TEXT NOT NULL,
 
-                  folder
-                  TEXT,
+        is_read INTEGER DEFAULT 0,
 
-                  body
-                  TEXT
-                  NOT
-                  NULL,
+        classification TEXT,
 
-                  is_read
-                  INTEGER
-                  DEFAULT
-                  0,
+        confidence REAL,
 
-                  classification
-                  TEXT,
+        processed INTEGER DEFAULT 0,
 
-                  confidence
-                  REAL,
-
-                  processed
-                  INTEGER
-                  DEFAULT
-                  0,
-
-                  created_at
-                  DATETIME
-                  DEFAULT
-                  CURRENT_TIMESTAMP
-              );
-              """,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    """,
 
     "Companies": """
-                 CREATE TABLE IF NOT EXISTS Companies
-                 (
+    CREATE TABLE IF NOT EXISTS Companies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-                     id
-                     INTEGER
-                     PRIMARY
-                     KEY
-                     AUTOINCREMENT,
+        domain TEXT UNIQUE NOT NULL,
 
-                     domain
-                     TEXT
-                     UNIQUE
-                     NOT
-                     NULL,
+        company_name TEXT NOT NULL,
 
-                     company_name
-                     TEXT
-                     NOT
-                     NULL,
+        industry TEXT,
 
-                     industry
-                     TEXT,
+        country TEXT,
 
-                     country
-                     TEXT,
+        privacy_score REAL,
 
-                     privacy_score
-                     REAL,
+        cluster INTEGER,
 
-                     cluster
-                     INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+    """,
 
-                     created_at
-                     DATETIME
-                     DEFAULT
-                     CURRENT_TIMESTAMP
-                 );
-                 """,
+    "SearchResults": """
+    CREATE TABLE IF NOT EXISTS SearchResults (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-    "CrawlResults": """
-                    CREATE TABLE IF NOT EXISTS CrawlResults
-                    (
+        search_engine TEXT NOT NULL,
 
-                        id
-                        INTEGER
-                        PRIMARY
-                        KEY
-                        AUTOINCREMENT,
+        search_query TEXT NOT NULL,
 
-                        company_id
-                        INTEGER
-                        NOT
-                        NULL,
+        url TEXT NOT NULL UNIQUE,
 
-                        url
-                        TEXT
-                        NOT
-                        NULL,
+        domain TEXT,
 
-                        page_title
-                        TEXT,
+        page_title TEXT,
 
-                        contains_name
-                        INTEGER
-                        DEFAULT
-                        0,
+        snippet TEXT,
 
-                        contains_email
-                        INTEGER
-                        DEFAULT
-                        0,
+        result_rank INTEGER,
 
-                        contains_phone
-                        INTEGER
-                        DEFAULT
-                        0,
+        discovered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-                        contains_address
-                        INTEGER
-                        DEFAULT
-                        0,
+        crawl_status TEXT DEFAULT 'pending',
 
-                        confidence
-                        REAL,
+        last_crawled DATETIME,
 
-                        last_scanned
-                        DATETIME,
+        crawl_attempts INTEGER DEFAULT 0
+    );
+    """,
 
-                        FOREIGN
-                        KEY
-                    (
-                        company_id
-                    )
-                        REFERENCES Companies
-                    (
-                        id
-                    )
-                        );
-                    """,
+    "ScrapeResults": """
+    CREATE TABLE IF NOT EXISTS ScrapeResults (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+        search_result_id INTEGER NOT NULL,
+    
+        entity_type TEXT NOT NULL,
+        entity_value TEXT NOT NULL,
+    
+        confidence REAL,
+    
+        analysed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+        FOREIGN KEY (search_result_id)
+            REFERENCES SearchResults(id)
+    );
+    """,
 
     "GDPRRequests": """
-                    CREATE TABLE IF NOT EXISTS GDPRRequests
-                    (
+    CREATE TABLE IF NOT EXISTS GDPRRequests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-                        id
-                        INTEGER
-                        PRIMARY
-                        KEY
-                        AUTOINCREMENT,
+        company_id INTEGER NOT NULL,
 
-                        company_id
-                        INTEGER
-                        NOT
-                        NULL,
+        email_id INTEGER,
 
-                        email_id
-                        INTEGER,
+        generated_request TEXT NOT NULL,
 
-                        generated_request
-                        TEXT
-                        NOT
-                        NULL,
+        tone TEXT NOT NULL,
 
-                        tone
-                        TEXT
-                        NOT
-                        NULL,
+        recipient_email TEXT,
 
-                        recipient_email
-                        TEXT,
+        status TEXT DEFAULT 'Draft',
 
-                        status
-                        TEXT
-                        DEFAULT
-                        'Draft',
+        sent_date DATETIME,
 
-                        sent_date
-                        DATETIME,
+        response_date DATETIME,
 
-                        response_date
-                        DATETIME,
+        notes TEXT,
 
-                        notes
-                        TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
 
-                        created_at
-                        DATETIME
-                        DEFAULT
-                        CURRENT_TIMESTAMP,
+        FOREIGN KEY (company_id)
+            REFERENCES Companies(id),
 
-                        FOREIGN
-                        KEY
-                    (
-                        company_id
-                    )
-                        REFERENCES Companies
-                    (
-                        id
-                    ),
-                        FOREIGN KEY
-                    (
-                        email_id
-                    )
-                        REFERENCES Emails
-                    (
-                        id
-                    )
-                        );
-                    """,
+        FOREIGN KEY (email_id)
+            REFERENCES Emails(id)
+    );
+    """
 }
 
 
@@ -243,7 +136,6 @@ def create_schema(connection: sqlite3.Connection) -> None:
     """
     Creates all database tables if they do not already exist.
     """
-
     cursor = connection.cursor()
 
     for table_sql in DATABASE_SCHEMA.values():
@@ -254,17 +146,19 @@ def create_schema(connection: sqlite3.Connection) -> None:
 
 def table_exists(connection: sqlite3.Connection, table_name: str) -> bool:
     """
-    Returns True if the table exists.
+    Returns True if the specified table exists.
     """
-
     cursor = connection.cursor()
 
-    cursor.execute("""
-                   SELECT name
-                   FROM sqlite_master
-                   WHERE type = 'table'
-                     AND name = ?
-                   """, (table_name,))
+    cursor.execute(
+        """
+        SELECT name
+        FROM sqlite_master
+        WHERE type = 'table'
+          AND name = ?
+        """,
+        (table_name,),
+    )
 
     return cursor.fetchone() is not None
 
@@ -272,11 +166,9 @@ def table_exists(connection: sqlite3.Connection, table_name: str) -> bool:
 def verify_schema(connection: sqlite3.Connection) -> bool:
     """
     Checks that all required tables exist.
-    Returns True if valid.
+    Returns True if the schema is valid.
     """
-
-    for table in DATABASE_SCHEMA.keys():
-        if not table_exists(connection, table):
-            return False
-
-    return True
+    return all(
+        table_exists(connection, table_name)
+        for table_name in DATABASE_SCHEMA.keys()
+    )
