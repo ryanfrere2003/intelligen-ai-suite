@@ -75,9 +75,9 @@ def load_mailbox_data(data_source:mailbox.mbox) -> pd.DataFrame:
             print(f"Processed {i} emails")
 
         email = {}
-        email["sender"] = item["from"]
-        email["subject"] = item["subject"]
-        email["date"] = item["date"]
+        email["sender"] = str(item.get("from", ""))
+        email["subject"] = str(item.get("subject", ""))
+        email["date"] = str(item.get("date", ""))
         email["body"] = mail_body_to_plain_text(item)
         emails.append(email)
 
