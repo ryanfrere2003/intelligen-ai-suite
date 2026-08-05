@@ -1,6 +1,7 @@
 """ contains functions that run on the mailbox csv to count events"""
 
 import re
+import pandas as pd
 
 #====================
 #detection lists
@@ -55,7 +56,6 @@ NEWSLETTER_KEYWORDS = [
 
 def detect_keywords(*email_sections:str,keyword_list:list) -> int:
     """ uses regex to detect advertising sequences in strings"""
-    keyword_list = ADVERTISING_KEYWORDS
     count = 0
 
     for section  in email_sections:
@@ -69,13 +69,12 @@ def detect_keywords(*email_sections:str,keyword_list:list) -> int:
 #functions
 #====================
 
-def label_email(email:dict) -> str:
+def label_email(email:pd.Series) -> dict:
     """ runs an email (pd.DataFrame Row) through a series of detection functions
         and then assigns the highest count"""
 
-    sender = email["sender"]
-    subject =  email["subject"]
-    date = email["date"]
+    sender = email["original_sender_string"]
+    subject = email["subject"]
     body = email["body"]
 
     advertising_count:int = detect_keywords(sender,subject,body,keyword_list=ADVERTISING_KEYWORDS)
@@ -84,12 +83,23 @@ def label_email(email:dict) -> str:
     newsletter_count:int = detect_keywords(sender,subject,body,keyword_list=NEWSLETTER_KEYWORDS)
 
     counts: dict[str, int] = {
-        "advertising" : advertising_count,
-        "marketing" : marketing_count,
-        "privacy" : privacy_count,
-        "newsletter" : newsletter_count
+        "advertising_count": advertising_count,
+        "marketing_count": marketing_count,
+        "privacy_count": privacy_count,
+        "newsletter_count": newsletter_count
     }
 
-    label:str = max(counts, key=counts.get) # type: ignore
+    max_value = max(counts.values())
+    highest = []
 
-    return label
+    if max_value == 0:
+        counts["label"] = "unlabelled" # type: ignore
+    else:
+        highest = [ key for key, value in counts.items() if value == max_value  ]
+
+        if len(highest) > 1:
+            counts["label"] = "ambiguous" # type: ignore
+        else:
+            counts["label"] = highest[0].split("_")[0] # type: ignore
+
+    return counts

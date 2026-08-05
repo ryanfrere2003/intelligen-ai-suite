@@ -159,7 +159,7 @@ DATABASE_SCHEMA = {
     CREATE TABLE IF NOT EXISTS TrainingData (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-        sender_name TEXT NOT NULL
+        sender_name TEXT NOT NULL,
 
         sender_email_username TEXT NOT NULL,
 
@@ -170,6 +170,8 @@ DATABASE_SCHEMA = {
         subject TEXT NOT NULL,
         
         body TEXT NOT NULL,
+
+        date TEXT NOT NULL,
 
         advertising_count INTEGER DEFAULT 0,
 

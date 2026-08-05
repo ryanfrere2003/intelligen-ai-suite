@@ -6,7 +6,9 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from email.utils import parseaddr
 
-from config import MAILBOX_PATH
+from config import MAILBOX_PATH, PROJECT_ROOT
+from database.database import get_connection
+from .labeller import label_email
 
 mailboxdata = mailbox.mbox(MAILBOX_PATH)
 
@@ -102,7 +104,7 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
      #add in columns for db preparation
     df.rename(columns={"sender": "original_sender_string"},inplace=True)
     df["sender_name"] = ""
-    df["sender_email_user"] = ""
+    df["sender_email_username"] = ""
     df["sender_email_domain"] = ""
     df["advertising_count"] = 0
     df["marketing_count"] = 0
@@ -113,7 +115,7 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
     df = df[
         [
             "sender_name",
-            "sender_email_user",
+            "sender_email_username",
             "sender_email_domain",
             "original_sender_string",
             "subject",
@@ -161,13 +163,32 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
 
         df.loc[index, "sender_name"] = sender_name
         df.loc[index, "sender_email_domain"] = sender_domain
-        df.loc[index, "sender_email_user"] = sender_email_user
+        df.loc[index, "sender_email_username"] = sender_email_user
 
+    for index, row in df.iterrows():
+        outcome:dict = label_email(row)
+        df.loc[index,"advertising_count"] = outcome.get("advertising_count")
+        df.loc[index,"marketing_count"] = outcome.get("marketing_count")
+        df.loc[index,"privacy_count"] = outcome.get("privacy_count")
+        df.loc[index,"newsletter_count"] = outcome.get("newsletter_count")
+        df.loc[index,"label"] = outcome.get("label")
 
       
     df.to_csv("gmail_dataset_clean.csv", index=False)
     print(df.head())
     return df
 
+
+def commit_data_to_db(dataframe:pd.DataFrame) -> None:
+    """ commits clean mailbox data to the TrainingData table"""
+    data = dataframe    
+    conn = get_connection()
+    data.to_sql("TrainingData", conn , if_exists="append", index=False)
+    return
+
+
+
+
 df_raw = load_mailbox_data(mailboxdata)
 def_clean = clean_mailbox_data(df_raw)
+commit_data_to_db(def_clean)
