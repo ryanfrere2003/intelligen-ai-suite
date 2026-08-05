@@ -153,6 +153,28 @@ DATABASE_SCHEMA = {
         FOREIGN KEY (email_id)
             REFERENCES Emails(id)
     );
+    """,
+
+    "TrainingData" : """
+    CREATE TABLE IF NOT EXISTS TrainingData (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        
+        sender_email_domain TEXT NOT NULL,
+
+        subject TEXT NOT NULL,
+        
+        body TEXT NOT NULL,
+
+        advertising_count INTEGER DEFAULT 0,
+
+        marketing_count INTEGER DEFAULT 0,
+
+        privacy_count INTEGER DEFAULT 0,
+
+        newsletter_count INTEGER DEFAULT 0,
+
+        label TEXT DEFAULT 'unlabelled'
+    );
     """
 }
 
