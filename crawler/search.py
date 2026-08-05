@@ -1,12 +1,21 @@
-"""Provides search functionality for suite. Finds CANDIDATE pages which MAY contain PII. Saves as """
+"""Provides search functionality for suite. Finds CANDIDATE pages which MAY contain PII. Saves results to database
+Create .env file in root directory as follows (minus the arrows):
+>USER_FULL_NAME=FNAME LNAME
+>USER_EMAIL=email@email.com
+>USER_USERNAMES=["Username1", "Username2"...]
+>USER_LOCATIONS=["Location1","Location2"...]
+>
+"""
 
-from urllib.parse import urlparse
-
-import pandas as pd
+from database.database import get_connection
 from ddgs import DDGS #DuckDuckGo Search
+from urllib.parse import urlparse
+from itertools import combinations
 
 from config import (
-    USER_FULL_NAME,
+    USER_FIRST_NAME,
+    USER_MIDDLE_NAMES,
+    USER_LAST_NAME,
     USER_EMAIL,
     USER_USERNAME,
     USER_LOCATIONS,
@@ -17,34 +26,67 @@ class Search:
     """Performs DuckDuckGo searches for user information."""
 
     @staticmethod
+    def build_name_permutations() -> list[str]:
+        """Generate useful name permutations."""
+
+        middle_names = USER_MIDDLE_NAMES or []
+
+        names = set()
+
+        # First Last
+        names.add(f"{USER_FIRST_NAME} {USER_LAST_NAME}")
+
+        # First Middle Last
+        for i in range(1, len(middle_names) + 1):
+            for combo in combinations(middle_names, i):
+                names.add(
+                    f"{USER_FIRST_NAME} {' '.join(combo)} {USER_LAST_NAME}"
+                )
+
+        # Full name
+        if middle_names:
+            names.add(
+                f"{USER_FIRST_NAME} {' '.join(middle_names)} {USER_LAST_NAME}"
+            )
+
+        return sorted(names)
+
+    @staticmethod
     def build_queries() -> list[str]:
         """Generate search queries."""
 
         queries = [
             f'"{USER_EMAIL}"',
-            f'"{USER_USERNAME}"',
             f'"{USER_EMAIL}" site:pastebin.com',
+            *[f'"{username}"' for username in USER_USERNAME],
         ]
 
-        # Name + known locations
-        for location in USER_LOCATIONS:
-            queries.extend([
-                f'"{USER_FULL_NAME}" "{location}"',
-                f'"{USER_FULL_NAME}" "{location}" site:linkedin.com',
-                f'"{USER_FULL_NAME}" "{location}" site:github.com',
-                f'"{USER_FULL_NAME}" "{location}" site:facebook.com',
-                f'"{USER_FULL_NAME}" "{location}" site:reddit.com',
-                f'"{USER_FULL_NAME}" "{location}" site:x.com',
-            ])
+        name_variants = Search.build_name_permutations()
 
-        # Name + username
-        queries.append(f'"{USER_FULL_NAME}" "{USER_USERNAME}"')
+        for name in name_variants:
 
-        # Name + email (if the search engine indexes it)
-        queries.append(f'"{USER_FULL_NAME}" "{USER_EMAIL}"')
+            # Name + known locations
+            for location in USER_LOCATIONS:
+                queries.extend([
+                    f'"{name}" "{location}"',
+                    f'"{name}" "{location}" site:linkedin.com',
+                    f'"{name}" "{location}" site:github.com',
+                    f'"{name}" "{location}" site:facebook.com',
+                    f'"{name}" "{location}" site:reddit.com',
+                    f'"{name}" "{location}" site:x.com',
+                ])
 
-        # Potential data leaks
-        queries.append(f'"{USER_FULL_NAME}" "{USER_USERNAME}" site:pastebin.com')
+            # Name + each username
+            for username in USER_USERNAME:
+                queries.append(f'"{name}" "{username}"')
+
+                # Potential data leaks
+                queries.append(
+                    f'"{name}" "{username}" site:pastebin.com'
+                )
+
+            # Name + email
+            queries.append(f'"{name}" "{USER_EMAIL}"')
 
         # Remove duplicates while preserving order
         return list(dict.fromkeys(queries))
@@ -59,22 +101,15 @@ class Search:
         return f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
 
     @staticmethod
-    def search(max_results: int = 10) -> pd.DataFrame:
+    def search(max_results: int = 10) -> None:
         """
-        Search DuckDuckGo for personal information.
-
-        Returns
-        -------
-        pandas.DataFrame
-            Columns:
-                source
-                query
-                title
-                url
-                snippet
+        Search DuckDuckGo for candidate pages and store them
+        in the SearchResults table.
         """
 
-        results = []
+        connection = get_connection()
+        cursor = connection.cursor()
+
         seen_urls = set()
 
         with DDGS() as ddgs:
@@ -84,12 +119,13 @@ class Search:
                 print(f"Searching: {query}")
 
                 try:
+
                     search_results = ddgs.text(
                         query,
                         max_results=max_results,
                     )
 
-                    for result in search_results:
+                    for rank, result in enumerate(search_results, start=1):
 
                         url = result.get("href", "")
 
@@ -103,25 +139,39 @@ class Search:
 
                         seen_urls.add(url)
 
-                        results.append(
-                            {
-                                "source": "duckduckgo",
-                                "query": query,
-                                "title": result.get("title", ""),
-                                "url": url,
-                                "snippet": result.get("body", ""),
-                            }
+                        parsed = urlparse(url)
+
+                        cursor.execute(
+                            """
+                            INSERT
+                            OR IGNORE INTO SearchResults
+                                (
+                                    search_engine,
+                                    search_query,
+                                    url,
+                                    domain,
+                                    page_title,
+                                    snippet,
+                                    result_rank
+                                )
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            """,
+                            (
+                                "duckduckgo",
+                                query,
+                                url,
+                                parsed.netloc,
+                                result.get("title", ""),
+                                result.get("body", ""),
+                                rank,
+                            ),
                         )
 
                 except Exception as e:
                     print(f"Search failed for '{query}': {e}")
 
-        df = pd.DataFrame(results)
-
-        if not df.empty:
-            df = df.drop_duplicates(subset="url").reset_index(drop=True)
-
-        return df
+        connection.commit()
+        connection.close()
 
 
 if __name__ == "__main__":
