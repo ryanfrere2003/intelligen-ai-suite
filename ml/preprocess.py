@@ -4,6 +4,7 @@ import mailbox
 import re
 import pandas as pd
 from bs4 import BeautifulSoup
+from email.utils import parseaddr
 
 from config import MAILBOX_PATH
 
@@ -98,16 +99,44 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
     df.info()
     df.head()
 
+     #add in columns for db preparation
+    df.rename(columns={"sender": "original_sender_string"},inplace=True)
+    df["sender_name"] = ""
+    df["sender_email_user"] = ""
+    df["sender_email_domain"] = ""
+    df["advertising_count"] = 0
+    df["marketing_count"] = 0
+    df["privacy_count"] = 0
+    df["newsletter_count"] = 0
+    df["label"] = "unlabelled"
+
+    df = df[
+        [
+            "sender_name",
+            "sender_email_user",
+            "sender_email_domain",
+            "original_sender_string",
+            "subject",
+            "body",
+            "date",
+            "advertising_count",
+            "marketing_count",
+            "privacy_count",
+            "newsletter_count",
+            "label"
+        ]
+    ]
+
     # remove duplicates
     before = len(df)
-    df = df.drop_duplicates(subset=["subject", "sender", "body"], keep="first")
+    df = df.drop_duplicates(subset=["subject", "body"], keep="first")
     after = len(df)
     print(f"removed ({before - after}) duplicated records from dataframe")
 
     # Handle missing values
     missing = df.isna().sum()
     print(missing)
-    text_columns = ["subject", "sender", "body"]
+    text_columns = ["subject", "body"]
 
     for col in text_columns:
         df[col] = df[col].fillna("")
@@ -120,33 +149,25 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
     for col in text_columns:
         df[col] = df[col].apply(clean_unicode) #remove unicode alignment
         df["body"] = df["body"].str.replace(r"\s+", " ", regex=True) #remove escape chars
-        df["sender"] = df["sender"].str.replace('"', '', regex=False) #remove quotes from sender field
+        #df["sender"] = parseaddr(df["sender"])
         df[col] = df[col].str.strip() #do this last incase artifacts from other 2 steps!
 
     for index, row in df.iterrows():
-        sender = df.iloc[index,"sender"]
+        sender:str = row["original_sender_string"]
+        sender_name, sender_address = parseaddr(sender) # type: ignore
+        print(f"sender name: {sender_name}    /     sender_address: {sender_address}")
+        sender_email_user, _, sender_domain = sender_address.partition("@")
+        print(f"sender_email_user: {sender_email_user} / sender_domain: {sender_domain}")
 
+        df.loc[index, "sender_name"] = sender_name
+        df.loc[index, "sender_email_domain"] = sender_domain
+        df.loc[index, "sender_email_user"] = sender_email_user
+
+
+      
     df.to_csv("gmail_dataset_clean.csv", index=False)
     print(df.head())
     return df
-
-def format_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
-    """ takes clean data and reformats for interpretation"""
-    
-    #add in columns for db preparation
-    mailbox_data_object["sender_email_domain"] = ""
-    mailbox_data_object["subject"] = mailbox_data_object["subject"]
-    mailbox_data_object["body"] = mailbox_data_object["body"]
-    mailbox_data_object["advertising_count"] = 0
-    mailbox_data_object["marketing_count"] = 0
-    mailbox_data_object["privacy_count"] = 0
-    mailbox_data_object["newsletter_count"] = 0
-    mailbox_data_object["label"] = "unlabelled"
-        
-
-    return df
-
-
 
 df_raw = load_mailbox_data(mailboxdata)
 def_clean = clean_mailbox_data(df_raw)

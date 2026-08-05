@@ -158,8 +158,14 @@ DATABASE_SCHEMA = {
     "TrainingData" : """
     CREATE TABLE IF NOT EXISTS TrainingData (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        
+
+        sender_name TEXT NOT NULL
+
+        sender_email_username TEXT NOT NULL,
+
         sender_email_domain TEXT NOT NULL,
+
+        original_sender_string TEXT NOT NULL,
 
         subject TEXT NOT NULL,
         
