@@ -80,8 +80,8 @@ DATABASE_SCHEMA = {
     );
     """,
 
-    "ScrapeResults": """
-    CREATE TABLE IF NOT EXISTS ScrapeResults (
+    "PIIEntities": """
+    CREATE TABLE IF NOT EXISTS PIIEntities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
     
         search_result_id INTEGER NOT NULL,
@@ -92,6 +92,31 @@ DATABASE_SCHEMA = {
         confidence REAL,
     
         analysed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+        FOREIGN KEY (search_result_id)
+            REFERENCES SearchResults(id)
+    );
+    """,
+
+    "CrawledPages":"""
+        CREATE TABLE IF NOT EXISTS CrawledPages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+        search_result_id INTEGER NOT NULL UNIQUE,
+    
+        http_status INTEGER,
+    
+        content_type TEXT,
+    
+        page_title TEXT,
+    
+        html TEXT,
+    
+        extracted_text TEXT,
+    
+        content_hash TEXT,
+    
+        crawled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
         FOREIGN KEY (search_result_id)
             REFERENCES SearchResults(id)
