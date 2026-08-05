@@ -123,6 +123,8 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
         df["sender"] = df["sender"].str.replace('"', '', regex=False) #remove quotes from sender field
         df[col] = df[col].str.strip() #do this last incase artifacts from other 2 steps!
 
+    for index, row in df.iterrows():
+        sender = df.iloc[index,"sender"]
 
     df.to_csv("gmail_dataset_clean.csv", index=False)
     print(df.head())
@@ -132,36 +134,15 @@ def format_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
     """ takes clean data and reformats for interpretation"""
     
     #add in columns for db preparation
-    mailbox_data_object["sender_domain"] = ""
-    mailbox_data_object["is_marketing"] = ""
-    mailbox_data_object["is_privacy_update"] = ""
-    mailbox_data_object["predicted_label"] = ""
-    mailbox_data_object["confidence"] = ""
-
-
-
-
-
-
-    #id
-
-    #subject
-
-    #sender
-
-    #sender_domain
-
-    #date_received
-
-    #body
-
-    #is_marketing
-
-    #is_privacy_update
-
-    #predicted_label
-
-    #confidence
+    mailbox_data_object["sender_email_domain"] = ""
+    mailbox_data_object["subject"] = mailbox_data_object["subject"]
+    mailbox_data_object["body"] = mailbox_data_object["body"]
+    mailbox_data_object["advertising_count"] = 0
+    mailbox_data_object["marketing_count"] = 0
+    mailbox_data_object["privacy_count"] = 0
+    mailbox_data_object["newsletter_count"] = 0
+    mailbox_data_object["label"] = "unlabelled"
+        
 
     return df
 
