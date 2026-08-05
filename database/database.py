@@ -1,5 +1,22 @@
-Privacy Policy Updates
-Terms of Service
-Cookie notices
-Security alerts
-Marketing emails
+from config import DATABASE_PATH
+import sqlite3
+
+from database.schema import create_schema
+
+
+def get_connection() -> sqlite3.Connection:
+    """
+    Return an initialised SQLite connection.
+    """
+    DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    connection = sqlite3.connect(DATABASE_PATH)
+
+    connection.row_factory = sqlite3.Row
+
+    connection.execute("PRAGMA foreign_keys = ON;")
+    connection.execute("PRAGMA journal_mode = WAL;")
+    connection.execute("PRAGMA synchronous = NORMAL;")
+
+    create_schema(connection)
+
+    return connection
