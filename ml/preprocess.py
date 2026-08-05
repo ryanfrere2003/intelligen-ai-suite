@@ -138,14 +138,16 @@ def format_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
     mailbox_data_object["predicted_label"] = ""
     mailbox_data_object["confidence"] = ""
 
-#TODO: ADAM STOPPED HERE 20th JULY
+
+
+
+
 
     #id
 
     #subject
 
     #sender
-
 
     #sender_domain
 
