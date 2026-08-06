@@ -43,6 +43,14 @@ DATABASE_SCHEMA = {
         industry TEXT,
 
         country TEXT,
+        
+        contact_email TEXT,
+
+        privacy_email TEXT,
+        
+        privacy_url TEXT,
+        
+        website TEXT,
 
         privacy_score REAL,
 
@@ -84,22 +92,24 @@ DATABASE_SCHEMA = {
     CREATE TABLE IF NOT EXISTS PIIEntities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
     
-        search_result_id INTEGER NOT NULL,
+        page_id INTEGER NOT NULL,
     
         entity_type TEXT NOT NULL,
+    
         entity_value TEXT NOT NULL,
     
         confidence REAL,
     
         analysed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     
-        FOREIGN KEY (search_result_id)
-            REFERENCES SearchResults(id)
+        FOREIGN KEY (page_id)
+            REFERENCES CrawledPages(id)
+            ON DELETE CASCADE
     );
     """,
 
-    "CrawledPages":"""
-        CREATE TABLE IF NOT EXISTS CrawledPages (
+    "CrawledPages": """
+    CREATE TABLE IF NOT EXISTS CrawledPages (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
     
         search_result_id INTEGER NOT NULL UNIQUE,
@@ -110,48 +120,112 @@ DATABASE_SCHEMA = {
     
         page_title TEXT,
     
+        description TEXT,
+    
+        keywords TEXT,
+    
         html TEXT,
     
         extracted_text TEXT,
     
         content_hash TEXT,
     
+        verification_status TEXT DEFAULT 'pending',
+        
+        risk_score REAL DEFAULT 0,
+        
+        match_score REAL DEFAULT 0,
+    
         crawled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        
+        company_id INTEGER,
+
+        FOREIGN KEY (company_id)
+            REFERENCES Companies(id)
     
         FOREIGN KEY (search_result_id)
             REFERENCES SearchResults(id)
     );
     """,
 
-    "GDPRRequests": """
-    CREATE TABLE IF NOT EXISTS GDPRRequests (
+    "PageEmails": """
+    CREATE TABLE IF NOT EXISTS PageEmails (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+        page_id INTEGER NOT NULL,
+    
+        email TEXT NOT NULL,
+    
+        FOREIGN KEY (page_id)
+            REFERENCES CrawledPages(id)
+            ON DELETE CASCADE
+    );
+    """,
 
-        company_id INTEGER NOT NULL,
+    "PageImages": """
+    CREATE TABLE IF NOT EXISTS PageImages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+        page_id INTEGER NOT NULL,
+    
+        image_url TEXT NOT NULL,
+    
+        FOREIGN KEY (page_id)
+            REFERENCES CrawledPages(id)
+            ON DELETE CASCADE
+    );
+    """,
 
+    "PageLinks": """
+    CREATE TABLE IF NOT EXISTS PageLinks (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+        page_id INTEGER NOT NULL,
+    
+        url TEXT NOT NULL,
+    
+        link_type TEXT NOT NULL,
+    
+        FOREIGN KEY (page_id)
+            REFERENCES CrawledPages(id)
+            ON DELETE CASCADE
+    );
+    """,
+
+    "GDPRRequests": """
+    CREATE TABLE GDPRRequests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+        company_id INTEGER,
+    
         email_id INTEGER,
-
+    
+        page_id INTEGER,
+    
         generated_request TEXT NOT NULL,
-
-        tone TEXT NOT NULL,
-
+    
+        tone TEXT,
+    
         recipient_email TEXT,
-
+    
         status TEXT DEFAULT 'Draft',
-
+    
         sent_date DATETIME,
-
+    
         response_date DATETIME,
-
+    
         notes TEXT,
-
+    
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
+    
         FOREIGN KEY (company_id)
             REFERENCES Companies(id),
-
+    
         FOREIGN KEY (email_id)
-            REFERENCES Emails(id)
+            REFERENCES Emails(id),
+    
+        FOREIGN KEY (page_id)
+            REFERENCES CrawledPages(id)
     );
     """,
 
