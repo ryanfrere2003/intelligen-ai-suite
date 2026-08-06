@@ -110,6 +110,7 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
     df["marketing_count"] = 0
     df["privacy_count"] = 0
     df["newsletter_count"] = 0
+    df["notification_count"] = 0
     df["label"] = "unlabelled"
 
     df = df[
@@ -125,6 +126,7 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
             "marketing_count",
             "privacy_count",
             "newsletter_count",
+            "notification_count",
             "label"
         ]
     ]
@@ -157,9 +159,8 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
     for index, row in df.iterrows():
         sender:str = row["original_sender_string"]
         sender_name, sender_address = parseaddr(sender) # type: ignore
-        print(f"sender name: {sender_name}    /     sender_address: {sender_address}")
         sender_email_user, _, sender_domain = sender_address.partition("@")
-        print(f"sender_email_user: {sender_email_user} / sender_domain: {sender_domain}")
+
 
         df.loc[index, "sender_name"] = sender_name
         df.loc[index, "sender_email_domain"] = sender_domain
@@ -171,11 +172,11 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
         df.loc[index,"marketing_count"] = outcome.get("marketing_count")
         df.loc[index,"privacy_count"] = outcome.get("privacy_count")
         df.loc[index,"newsletter_count"] = outcome.get("newsletter_count")
+        df.loc[index,"notification_count"] = outcome.get("notification_count")
         df.loc[index,"label"] = outcome.get("label")
 
       
     df.to_csv("gmail_dataset_clean.csv", index=False)
-    print(df.head())
     return df
 
 
@@ -186,8 +187,9 @@ def commit_data_to_db(dataframe:pd.DataFrame) -> None:
     data.to_sql("TrainingData", conn , if_exists="append", index=False)
     return
 
-
-
+#=========
+#logic
+#=========
 
 df_raw = load_mailbox_data(mailboxdata)
 def_clean = clean_mailbox_data(df_raw)

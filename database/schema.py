@@ -255,6 +255,8 @@ DATABASE_SCHEMA = {
 
         newsletter_count INTEGER DEFAULT 0,
 
+        notification_count INTEGER DEFAULT 0,
+
         label TEXT DEFAULT 'unlabelled'
     );
     """
