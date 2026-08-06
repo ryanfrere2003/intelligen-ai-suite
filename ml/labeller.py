@@ -6,63 +6,187 @@ import pandas as pd
 #====================
 #detection lists
 #====================
-ADVERTISING_KEYWORDS = [
-    "buy now",
-    "limited time",
-    "offer",
-    "sale",
-    "discount",
-    "exclusive",
-    "promotion",
-    "shop now",
-]
+LABEL_KEYWORDS = {
+    "advertising" : {
+    "strong": [
+        "buy now",
+        "shop now",
+        "discount code",
+        "promo code",
+        "coupon",
+        "limited time offer",
+        "free shipping",
+        "save %",
+        "clearance",
+        "flash sale",
+        "exclusive offer",
+    ],
 
-MARKETING_KEYWORDS = [
-    "campaign",
-    "brand",
-    "launch",
-    "discover",
-    "learn more",
-    "introducing",
-    "webinar",
-    "customer success",
-]
+    "weak": [
+        "sale",
+        "discount",
+        "offer",
+        "promotion",
+        "deal",
+        "grab",
+        "tickets",
+        "special price",
+    ]
+},
+    "marketing" : {
+    "strong": [
+        "introducing",
+        "new product",
+        "new features",
+        "latest release",
+        "customer success",
+        "customer story",
+        "case study",
+        "success story",
+        "webinar",
+        "whitepaper",
+        "ebook",
+        "our mission",
+        "our story",
+    ],
 
-PRIVACY_KEYWORDS = [
-    "privacy policy",
-    "gdpr",
-    "data protection",
-    "your data",
-    "consent",
-    "cookies",
-    "personal information",
-    "privacy notice",
-]
+    "weak": [
+        "latest updates",
+        "coming soon",
+        "now available",
+        "available now",
+        "explore our",
+        "discover our",
+        "learn more",
+        "find out more",
+        "community",
+        "event",
+        "workshop",
+        "guide",
+        "blog",
+        "campaign",
+        "collection",
+        "experience",
+        "get inspired",
+    ]
+},
+    "privacy" : {
+    "strong": [
+        "gdpr",
+        "general data protection regulation",
+        "data protection",
+        "privacy policy",
+        "privacy notice",
+        "privacy statement",
+        "subject access request",
+        "right to erasure",
+        "right to access",
+        "updated privacy policy",
+        "changes to our privacy",
+        "changes to data practices",
+    ],
 
-NEWSLETTER_KEYWORDS = [
-    "newsletter",
-    "this month",
-    "latest news",
-    "weekly update",
-    "monthly update",
-    "edition",
-    "highlights",
-    "unsubscribe",
-]
+    "weak": [
+        "data processing",
+        "processing your personal data",
+        "processing of your data",
+        "legal basis",
+        "data subject",
+        "delete my data",
+        "request my data",
+    ]
+},
+    "newsletter" : {
+    "strong": [
+        "newsletter",
+        "monthly newsletter",
+        "weekly newsletter",
+        "news letter",
+        "edition",
+        "daily digest",
+        "weekly digest",
+        "monthly digest",
+        "roundup",
+    ],
+
+    "weak": [
+        "monthly update",
+        "weekly update",
+        "latest news",
+        "highlights",
+        "what's new",
+        "this month",
+        "this week's",
+        "articles",
+        "stories",
+        "insights",
+        "tips and tricks",
+        "community update",
+        "from our blog",
+        "manage subscription",
+        "email preferences",
+    ]
+},
+    "notification" : {
+    "strong": [
+        "mentioned you",
+        "tagged you",
+        "commented on",
+        "liked your",
+        "reacted to",
+        "new follower",
+        "new friend request",
+        "friend request",
+        "verification code",
+        "two-factor authentication",
+        "2fa code",
+        "one time code",
+        "password reset",
+        "new sign-in",
+        "login attempt",
+        "suspicious activity",
+        "device signed in",
+        "went live",
+        "uploaded a new video",
+        "new subscriber",
+    ],
+
+    "weak": [
+        "security alert",
+        "new device",
+        "people you may know",
+        "someone shared",
+        "new video",
+        "channel update",
+        "premiere",
+        "notification",
+        "alert",
+        "reminder",
+    ]
+}
+}
 
 #====================
 #helpers
 #====================
 
-def detect_keywords(*email_sections:str,keyword_list:list) -> int:
-    """ uses regex to detect advertising sequences in strings"""
+def detect_keywords(*email_sections: str, keyword_dict: dict) -> int:
+    """Counts keyword matches using weighted strong/weak keywords"""
+
     count = 0
 
-    for section  in email_sections:
+    for section in email_sections:
         section = section.lower()
-        for keyword in keyword_list:
-            count += len(re.findall(re.escape(keyword.lower()), section))
-    
+
+        #strong words are worth 2 points
+        for keyword in keyword_dict["strong"]:
+            count += len(re.findall(re.escape(keyword.lower()),section)) * 2
+
+        #weak words are worth one point
+        for keyword in keyword_dict["weak"]:
+            count += len(re.findall(re.escape(keyword.lower()),section))
+
+
     return count
 
 #====================
@@ -77,17 +201,12 @@ def label_email(email:pd.Series) -> dict:
     subject = email["subject"]
     body = email["body"]
 
-    advertising_count:int = detect_keywords(sender,subject,body,keyword_list=ADVERTISING_KEYWORDS)
-    marketing_count:int = detect_keywords(sender,subject,body,keyword_list=MARKETING_KEYWORDS)
-    privacy_count:int = detect_keywords(sender,subject,body,keyword_list=PRIVACY_KEYWORDS)
-    newsletter_count:int = detect_keywords(sender,subject,body,keyword_list=NEWSLETTER_KEYWORDS)
+    #new categories can be added above
+    counts: dict[str, int] = {}
+    max_value = 0
 
-    counts: dict[str, int] = {
-        "advertising_count": advertising_count,
-        "marketing_count": marketing_count,
-        "privacy_count": privacy_count,
-        "newsletter_count": newsletter_count
-    }
+    for label, keywords in LABEL_KEYWORDS.items():
+        counts[f"{label}_count"] = detect_keywords(sender,subject,body,keyword_dict=keywords)
 
     max_value = max(counts.values())
     highest = []
@@ -103,3 +222,8 @@ def label_email(email:pd.Series) -> dict:
             counts["label"] = highest[0].split("_")[0] # type: ignore
 
     return counts
+
+
+#====================
+#logic
+#===================
