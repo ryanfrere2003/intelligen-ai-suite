@@ -1,9 +1,11 @@
 """Provides search functionality for suite. Finds CANDIDATE pages which MAY contain PII. Saves results to database
 Create .env file in root directory as follows (minus the arrows):
->USER_FULL_NAME=FNAME LNAME
->USER_EMAIL=email@email.com
->USER_USERNAMES=["Username1", "Username2"...]
->USER_LOCATIONS=["Location1","Location2"...]
+>USER_FIRST_NAME="FNAME"
+>USER_MIDDLE_NAMES='["Name1", "Name2"...]'
+>USER_LAST_NAME="LNAME"
+>USER_EMAIL="email@email.com"
+>USER_USERNAMES='["Username1", "Username2"...]'
+>USER_LOCATIONS='["Location1","Location2"...]'
 >
 """
 
@@ -24,6 +26,48 @@ from config import (
 
 class Search:
     """Performs DuckDuckGo searches for user information."""
+
+    LEAK_SITES = [
+        "pastebin.com",
+        "controlc.com",
+        "ghostbin.com",
+        "paste.ee",
+        "justpaste.it",
+    ]
+
+    PEOPLE_SITES = [
+        "whitepages.com",
+        "truepeoplesearch.com",
+        "fastpeoplesearch.com",
+        "spokeo.com",
+        "beenverified.com",
+        "peekyou.com",
+        "radaris.com",
+        "addresses.com",
+    ]
+
+    SOCIAL_SITES = [
+        "facebook.com",
+        "linkedin.com",
+        "instagram.com",
+        "x.com",
+        "reddit.com",
+        "tiktok.com",
+        "threads.net",
+        "youtube.com",
+        "pinterest.com",
+        "flickr.com",
+    ]
+
+    DEV_SITES = [
+        "github.com",
+        "gitlab.com",
+        "bitbucket.org",
+        "stackoverflow.com",
+        "npmjs.com",
+        "pypi.org",
+        "huggingface.co",
+    ]
 
     @staticmethod
     def build_name_permutations() -> list[str]:
@@ -55,41 +99,143 @@ class Search:
     def build_queries() -> list[str]:
         """Generate search queries."""
 
-        queries = [
-            f'"{USER_EMAIL}"',
-            f'"{USER_EMAIL}" site:pastebin.com',
-            *[f'"{username}"' for username in USER_USERNAME],
-        ]
+        queries = []
 
-        name_variants = Search.build_name_permutations()
+        # -----------------------------
+        # Email
+        # -----------------------------
+        if USER_EMAIL:
+            queries.extend([
+                f'"{USER_EMAIL}"',
+                f'"{USER_EMAIL}" site:pastebin.com',
+                f'"{USER_EMAIL}" password',
+                f'"{USER_EMAIL}" leak',
+                f'"{USER_EMAIL}" breach',
+            ])
 
-        for name in name_variants:
+        # -----------------------------
+        # Usernames
+        # -----------------------------
+        for username in USER_USERNAME:
+            queries.append(f'"{username}"')
 
-            # Name + known locations
-            for location in USER_LOCATIONS:
-                queries.extend([
-                    f'"{name}" "{location}"',
-                    f'"{name}" "{location}" site:linkedin.com',
-                    f'"{name}" "{location}" site:github.com',
-                    f'"{name}" "{location}" site:facebook.com',
-                    f'"{name}" "{location}" site:reddit.com',
-                    f'"{name}" "{location}" site:x.com',
-                ])
-
-            # Name + each username
-            for username in USER_USERNAME:
-                queries.append(f'"{name}" "{username}"')
-
-                # Potential data leaks
+            for site in (
+                    Search.SOCIAL_SITES
+                    + Search.DEV_SITES
+                    + Search.LEAK_SITES
+            ):
                 queries.append(
-                    f'"{name}" "{username}" site:pastebin.com'
+                    f'"{username}" site:{site}'
                 )
 
+        # -----------------------------
+        # Names
+        # -----------------------------
+        for name in Search.build_name_permutations():
+
+            # Name only
+            queries.append(f'"{name}"')
+
             # Name + email
-            queries.append(f'"{name}" "{USER_EMAIL}"')
+            if USER_EMAIL:
+                queries.append(
+                    f'"{name}" "{USER_EMAIL}"'
+                )
+
+            # Name + usernames
+            for username in USER_USERNAME:
+                queries.extend([
+                    f'"{name}" "{username}"',
+                    f'"{name}" "{username}" site:pastebin.com',
+                ])
+
+            # Name + locations
+            for location in USER_LOCATIONS:
+
+                # General search
+                queries.append(
+                    f'"{name}" "{location}"'
+                )
+
+                # Social media
+                for site in Search.SOCIAL_SITES:
+                    queries.append(
+                        f'"{name}" "{location}" site:{site}'
+                    )
+
+                # Developer sites
+                for site in Search.DEV_SITES:
+                    queries.append(
+                        f'"{name}" "{location}" site:{site}'
+                    )
+
+                # Leak sites
+                for site in Search.LEAK_SITES:
+                    queries.append(
+                        f'"{name}" "{location}" site:{site}'
+                    )
+
+                # People search sites
+                for site in Search.PEOPLE_SITES:
+                    queries.append(
+                        f'"{name}" "{location}" site:{site}'
+                    )
+
+            # -----------------------------
+            # Documents
+            # -----------------------------
+            queries.extend([
+                f'"{name}" filetype:pdf',
+                f'"{name}" filetype:doc',
+                f'"{name}" filetype:docx',
+                f'"{name}" filetype:ppt',
+                f'"{name}" filetype:pptx',
+                f'"{name}" filetype:xls',
+                f'"{name}" filetype:xlsx',
+                f'"{name}" CV',
+                f'"{name}" resume',
+            ])
+
+            # -----------------------------
+            # Contact information
+            # -----------------------------
+            queries.extend([
+                f'"{name}" contact',
+                f'"{name}" email',
+                f'"{name}" phone',
+                f'"{name}" address',
+            ])
+
+            # -----------------------------
+            # Profile pages
+            # -----------------------------
+            queries.extend([
+                f'"{name}" inurl:author',
+                f'"{name}" inurl:profile',
+                f'"{name}" inurl:profiles',
+                f'"{name}" inurl:user',
+                f'"{name}" inurl:users',
+                f'"{name}" inurl:member',
+                f'"{name}" inurl:members',
+                f'"{name}" inurl:people',
+                f'"{name}" inurl:person',
+                f'intitle:"{name}"',
+            ])
+
+            # -----------------------------
+            # Company / staff pages
+            # -----------------------------
+            queries.extend([
+                f'"{name}" staff',
+                f'"{name}" team',
+                f'"{name}" profile',
+                f'"{name}" employee',
+                f'"{name}" contact',
+            ])
 
         # Remove duplicates while preserving order
         return list(dict.fromkeys(queries))
+
 
     @staticmethod
     def canonical(url: str) -> str:
