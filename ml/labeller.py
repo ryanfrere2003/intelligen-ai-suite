@@ -7,163 +7,191 @@ import pandas as pd
 #detection lists
 #====================
 LABEL_KEYWORDS = {
-    "advertising" : {
+ "advertising": {
     "strong": [
         "buy now",
         "shop now",
         "discount code",
         "promo code",
         "coupon",
+        "voucher code",
         "limited time offer",
         "free shipping",
+        "free delivery",
         "save %",
         "clearance",
         "flash sale",
         "exclusive offer",
-    ],
+        "exclusive deal",
+        "offer ends",
+        "last chance",
+        "order now",
+        "claim your"
+        ],
 
     "weak": [
         "sale",
         "discount",
-        "offer",
-        "promotion",
         "deal",
-        "grab",
-        "tickets",
         "special price",
-    ]
-},
-    "marketing" : {
-    "strong": [
-        "introducing",
-        "new product",
-        "new features",
-        "latest release",
-        "customer success",
-        "customer story",
-        "case study",
-        "success story",
-        "webinar",
-        "whitepaper",
-        "ebook",
-        "our mission",
-        "our story",
-    ],
+        "reduced price",
+        "save money",
+        "lowest price",
+        "bundle offer",
+        "gift card",
+        "free trial"
+        ]
+    },
+        "marketing": {
+        "strong": [
+            "introducing",
+            "announcing",
+            "launching",
+            "new product",
+            "new service",
+            "new feature",
+            "new features",
+            "product update",
+            "platform update",
+            "upgrade",
+            "upgrade now",
+            "try our",
+            "start your free",
+            "free trial",
+            "get started",
+            "customer success",
+            "customer story",
+            "case study",
+            "success story",
+            "webinar",
+            "whitepaper",
+            "ebook",
+            "request a demo",
+            "book a demo",
+            "schedule a demo",
+            "see what's new"
+        ],
 
-    "weak": [
-        "latest updates",
-        "coming soon",
-        "now available",
-        "available now",
-        "explore our",
-        "discover our",
-        "learn more",
-        "find out more",
-        "community",
-        "event",
-        "workshop",
-        "guide",
-        "blog",
-        "campaign",
-        "collection",
-        "experience",
-        "get inspired",
-    ]
-},
+        "weak": [
+            "coming soon",
+            "now available",
+            "available now",
+            "learn more",
+            "discover",
+            "explore",
+            "announcement",
+            "release",
+            "campaign",
+            "collection",
+            "experience",
+            "marketing preferences"
+        ]
+    },
     "privacy" : {
-    "strong": [
-        "gdpr",
-        "general data protection regulation",
-        "data protection",
-        "privacy policy",
-        "privacy notice",
-        "privacy statement",
-        "subject access request",
-        "right to erasure",
-        "right to access",
-        "updated privacy policy",
-        "changes to our privacy",
-        "changes to data practices",
-    ],
+        "strong": [
+            "gdpr",
+            "general data protection regulation",
+            "data protection",
+            "updated our privacy policy",
+            "our privacy policy",
+            "terms of service and privacy policy",
+            "terms of use and privacy policy",
+            "privacy notice",
+            "privacy statement",
+            "subject access request",
+            "right to erasure",
+            "right to access",
+            "updated privacy policy",
+            "changes to our privacy",
+            "changes to data practices",
+        ],
 
-    "weak": [
-        "data processing",
-        "processing your personal data",
-        "processing of your data",
-        "legal basis",
-        "data subject",
-        "delete my data",
-        "request my data",
-    ]
-},
-    "newsletter" : {
-    "strong": [
-        "newsletter",
-        "monthly newsletter",
-        "weekly newsletter",
-        "news letter",
-        "edition",
-        "daily digest",
-        "weekly digest",
-        "monthly digest",
-        "roundup",
-    ],
+        "weak": [
+            "data processing",
+            "processing your personal data",
+            "processing of your data",
+            "legal basis",
+            "data subject",
+            "delete my data",
+            "request my data",
+        ]
+    },
+    "newsletter": {
+        "strong": [
+            "newsletter",
+            "monthly newsletter",
+            "weekly newsletter",
+            "news letter",
+            "edition",
+            "daily digest",
+            "weekly digest",
+            "monthly digest",
+            "roundup",
+            "top stories",
+            "latest stories",
+            "more new posts",
+            "switch to weekly",
+            "switch to daily",
+            "get the latest"
+        ],
 
-    "weak": [
-        "monthly update",
-        "weekly update",
-        "latest news",
-        "highlights",
-        "what's new",
-        "this month",
-        "this week's",
-        "articles",
-        "stories",
-        "insights",
-        "tips and tricks",
-        "community update",
-        "from our blog",
-        "manage subscription",
-        "email preferences",
-    ]
-},
+        "weak": [
+            "digest",
+            "monthly update",
+            "weekly update",
+            "daily update",
+            "daily email",
+            "latest news",
+            "highlights",
+            "what's new",
+            "this month",
+            "this week's",
+            "from our blog",
+            "community update",
+        ]
+    },
     "notification" : {
-    "strong": [
-        "mentioned you",
-        "tagged you",
-        "commented on",
-        "liked your",
-        "reacted to",
-        "new follower",
-        "new friend request",
-        "friend request",
-        "verification code",
-        "two-factor authentication",
-        "2fa code",
-        "one time code",
-        "password reset",
-        "new sign-in",
-        "login attempt",
-        "suspicious activity",
-        "device signed in",
-        "went live",
-        "uploaded a new video",
-        "new subscriber",
-    ],
+        "strong": [
+            "mentioned you",
+            "tagged you",
+            "commented on",
+            "liked your",
+            "reacted to",
+            "new follower",
+            "new friend request",
+            "friend request",
+            "verification code",
+            "two-factor authentication",
+            "2fa code",
+            "one time code",
+            "password reset",
+            "new sign-in",
+            "login attempt",
+            "suspicious activity",
+            "device signed in",
+            "went live",
+            "is now live",
+            "is live now",
+            "is live streaming",
+            "is livestreaming"
+            "uploaded a new video",
+            "new subscriber",
+        ],
 
-    "weak": [
-        "security alert",
-        "new device",
-        "people you may know",
-        "someone shared",
-        "new video",
-        "channel update",
-        "premiere",
-        "notification",
-        "alert",
-        "reminder",
-    ]
-}
+        "weak": [
+            "security alert",
+            "new device",
+            "people you may know",
+            "someone shared",
+            "new video",
+            "channel update",
+            "premiere",
+            "notification",
+            "alert",
+            "reminder",
+            "new posts"
+        ]
+    }
 }
 
 #====================
@@ -174,18 +202,25 @@ def detect_keywords(*email_sections: str, keyword_dict: dict) -> int:
     """Counts keyword matches using weighted strong/weak keywords"""
 
     count = 0
+    strong_match = False
 
     for section in email_sections:
         section = section.lower()
 
         #strong words are worth 2 points
         for keyword in keyword_dict["strong"]:
-            count += len(re.findall(re.escape(keyword.lower()),section)) * 2
+            matches = len(re.findall(re.escape(keyword.lower()),section))
+            if matches > 0:
+                strong_match = True
+            count += matches * 2
 
         #weak words are worth one point
         for keyword in keyword_dict["weak"]:
             count += len(re.findall(re.escape(keyword.lower()),section))
 
+    #if a score is low set it to 0, this improves the quality of training data
+    if count <= 1 and not strong_match:
+        count = 0
 
     return count
 

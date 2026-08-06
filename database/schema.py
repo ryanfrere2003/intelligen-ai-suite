@@ -193,7 +193,7 @@ DATABASE_SCHEMA = {
     """,
 
     "GDPRRequests": """
-    CREATE TABLE GDPRRequests (
+    CREATE TABLE  IF NOT EXISTS GDPRRequests (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
     
         company_id INTEGER,

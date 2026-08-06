@@ -174,8 +174,7 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
         df.loc[index,"newsletter_count"] = outcome.get("newsletter_count")
         df.loc[index,"notification_count"] = outcome.get("notification_count")
         df.loc[index,"label"] = outcome.get("label")
-
-      
+ 
     df.to_csv("gmail_dataset_clean.csv", index=False)
     return df
 
