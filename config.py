@@ -12,7 +12,7 @@ USER_MIDDLE_NAMES= json.loads(os.getenv("USER_MIDDLE_NAMES", "[]"))
 USER_EMAIL = os.getenv("USER_EMAIL")
 USER_USERNAME = json.loads(os.getenv("USER_USERNAMES", "[]"))
 USER_LOCATIONS = json.loads(os.getenv("USER_LOCATIONS", "[]"))
-
+USER_NUMBERS = json.loads(os.getenv("USER_NUMBERS", "[]"))
 
 #--------------
 # PATHS
