@@ -11,13 +11,70 @@ class Review:
 
     @staticmethod
     def review_pending() -> None:
-        """Review analysed pages awaiting user verification."""
+        """Review analysed pages and previous decisions."""
 
         connection = get_connection()
         cursor = connection.cursor()
 
-        cursor.execute(
+        print("\nReview Mode")
+        print("-" * WIDTH)
+        print("[1] Review candidates (score > 0)")
+        print("[2] Review possible false negatives (score = 0)")
+        print("[3] Review all pending")
+        print("[4] Review previous decisions")
+        print("[Q] Quit")
+
+        mode = input("> ").strip().lower()
+
+        if mode == "q":
+            connection.close()
+            return
+
+        score_filter = ""
+        status_filter = ""
+
+        if mode == "1":
+            status_filter = """
+                AND cp.verification_status='pending'
             """
+            score_filter = """
+                AND (
+                    cp.risk_score > 0
+                    OR cp.match_score > 0
+                )
+            """
+
+        elif mode == "2":
+            status_filter = """
+                AND cp.verification_status='pending'
+            """
+            score_filter = """
+                AND cp.risk_score = 0
+                AND cp.match_score = 0
+            """
+
+        elif mode == "3":
+            status_filter = """
+                AND cp.verification_status='pending'
+            """
+
+        elif mode == "4":
+            status_filter = """
+                AND cp.verification_status IN (
+                    'verified',
+                    'false_positive',
+                    'ignored'
+                )
+            """
+
+        else:
+            print("Invalid option.")
+            connection.close()
+            return
+
+
+        cursor.execute(
+            f"""
             SELECT
                 cp.id,
                 cp.page_title,
@@ -29,17 +86,22 @@ class Review:
             FROM CrawledPages cp
             JOIN SearchResults sr
                 ON cp.search_result_id = sr.id
-            WHERE cp.verification_status='pending'
-            ORDER BY cp.risk_score DESC, cp.id ASC
+            WHERE 1=1
+            {status_filter}
+            {score_filter}
+            ORDER BY cp.risk_score DESC,
+                     cp.match_score DESC,
+                     cp.id ASC
             """
         )
 
         pages = cursor.fetchall()
 
         if not pages:
-            print("No pages awaiting review.")
+            print("No pages available for review.")
             connection.close()
             return
+
 
         for page in pages:
 
@@ -50,8 +112,10 @@ class Review:
             print(f"Title       : {page['page_title'] or 'Unknown'}")
             print(f"Risk Score  : {page['risk_score']}")
             print(f"Match Score : {page['match_score']}")
+            print(f"Status      : {page['verification_status']}")
             print(f"URL         : {page['url']}")
             print("=" * WIDTH)
+
 
             cursor.execute(
                 """
@@ -68,18 +132,22 @@ class Review:
 
             entities = cursor.fetchall()
 
+
             print("\nDetected PII")
             print("-" * WIDTH)
 
             if entities:
+
                 for entity in entities:
                     print(
                         f"{entity['entity_type']:<15}"
                         f"{entity['entity_value']} "
                         f"({entity['confidence']:.2f})"
                     )
+
             else:
                 print("None")
+
 
             print("\nPreview")
             print("-" * WIDTH)
@@ -95,76 +163,68 @@ class Review:
 
             print(wrapped_preview)
 
+
             print("-" * WIDTH)
-            print()
             print("[V] Verify")
             print("[F] False Positive")
             print("[I] Ignore")
+            print("[R] Reset to Pending")
             print("[O] Open URL")
             print("[S] Skip")
             print("[Q] Quit")
+
 
             while True:
 
                 choice = input("> ").strip().lower()
 
+
                 if choice == "o":
                     webbrowser.open(page["url"])
                     continue
 
+
                 if choice == "v":
-                    cursor.execute(
-                        """
-                        UPDATE CrawledPages
-                        SET verification_status='verified'
-                        WHERE id = ?
-                        """,
-                        (page_id,),
-                    )
+                    status = "verified"
 
-                    connection.commit()
+                elif choice == "f":
+                    status = "false_positive"
 
-                    print("✓ Marked as verified.")
+                elif choice == "i":
+                    status = "ignored"
+
+                elif choice == "r":
+                    status = "pending"
+
+                elif choice == "s":
                     break
 
-                if choice == "f":
-                    cursor.execute(
-                        """
-                        UPDATE CrawledPages
-                        SET verification_status='false_positive'
-                        WHERE id = ?
-                        """,
-                        (page_id,),
-                    )
-
-                    connection.commit()
-
-                    print("✓ Marked as false positive.")
-                    break
-
-                if choice == "i":
-                    cursor.execute(
-                        """
-                        UPDATE CrawledPages
-                        SET verification_status='ignored'
-                        WHERE id = ?
-                        """,
-                        (page_id,),
-                    )
-
-                    connection.commit()
-
-                    print("✓ Marked as ignored.")
-                    break
-
-                if choice == "s":
-                    break
-
-                if choice == "q":
+                elif choice == "q":
                     connection.close()
                     return
 
-                print("Invalid option.")
+                else:
+                    print("Invalid option.")
+                    continue
+
+
+                cursor.execute(
+                    """
+                    UPDATE CrawledPages
+                    SET verification_status=?
+                    WHERE id=?
+                    """,
+                    (
+                        status,
+                        page_id,
+                    ),
+                )
+
+                connection.commit()
+
+                print(f"✓ Marked as {status}.")
+                break
+
 
         connection.close()
 
