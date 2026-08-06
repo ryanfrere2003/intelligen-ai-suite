@@ -6,4 +6,4 @@
 *.csv
 *.pyc
 
-.env.env
+.env
