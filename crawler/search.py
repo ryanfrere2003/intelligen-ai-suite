@@ -6,6 +6,7 @@ Create .env file in root directory as follows (minus the arrows):
 >USER_EMAIL="email@email.com"
 >USER_USERNAMES='["Username1", "Username2"...]'
 >USER_LOCATIONS='["Location1","Location2"...]'
+>USER_NUMBERS='["Phone1","Phone2"...]'
 >
 """
 
@@ -21,6 +22,7 @@ from config import (
     USER_EMAIL,
     USER_USERNAME,
     USER_LOCATIONS,
+    USER_NUMBERS
 )
 
 
@@ -92,32 +94,50 @@ class Search:
             names.add(
                 f"{USER_FIRST_NAME} {' '.join(middle_names)} {USER_LAST_NAME}"
             )
-
+        print(sorted(names))
         return sorted(names)
 
     @staticmethod
-    def build_queries() -> list[str]:
-        """Generate search queries."""
+    def email_queries():
 
         queries = []
 
-        # -----------------------------
-        # Email
-        # -----------------------------
-        if USER_EMAIL:
+        if not USER_EMAIL:
+            return queries
+
+        queries.extend([
+            f'"{USER_EMAIL}"',
+            f'"{USER_EMAIL}" leak',
+            f'"{USER_EMAIL}" breach',
+            f'"{USER_EMAIL}" password',
+        ])
+
+        return queries
+
+    @staticmethod
+    def phone_queries():
+
+        queries = []
+
+        for number in USER_NUMBERS:
             queries.extend([
-                f'"{USER_EMAIL}"',
-                f'"{USER_EMAIL}" site:pastebin.com',
-                f'"{USER_EMAIL}" password',
-                f'"{USER_EMAIL}" leak',
-                f'"{USER_EMAIL}" breach',
+                f'"{number}"',
+                f'"{number}" leak',
+                f'"{number}" pastebin',
             ])
 
-        # -----------------------------
-        # Usernames
-        # -----------------------------
+        return queries
+
+    @staticmethod
+    def username_queries():
+
+        queries = []
+
         for username in USER_USERNAME:
-            queries.append(f'"{username}"')
+
+            queries.append(
+                f'"{username}"'
+            )
 
             for site in (
                     Search.SOCIAL_SITES
@@ -128,114 +148,92 @@ class Search:
                     f'"{username}" site:{site}'
                 )
 
-        # -----------------------------
-        # Names
-        # -----------------------------
-        for name in Search.build_name_permutations():
+        return queries
 
-            # Name only
-            queries.append(f'"{name}"')
+    @staticmethod
+    def identity_queries():
 
-            # Name + email
+        queries = []
+
+        names = Search.build_name_permutations()
+
+        for name in names:
+
+            for location in USER_LOCATIONS:
+                queries.extend([
+                    f'"{name}" "{location}"',
+                ])
+
+            for username in USER_USERNAME:
+                queries.extend([
+                    f'"{name}" "{username}"',
+                ])
+
             if USER_EMAIL:
                 queries.append(
                     f'"{name}" "{USER_EMAIL}"'
                 )
 
-            # Name + usernames
-            for username in USER_USERNAME:
-                queries.extend([
-                    f'"{name}" "{username}"',
-                    f'"{name}" "{username}" site:pastebin.com',
-                ])
-
-            # Name + locations
-            for location in USER_LOCATIONS:
-
-                # General search
+            for number in USER_NUMBERS:
                 queries.append(
-                    f'"{name}" "{location}"'
+                    f'"{name}" "{number}"'
                 )
 
-                # Social media
-                for site in Search.SOCIAL_SITES:
-                    queries.append(
-                        f'"{name}" "{location}" site:{site}'
-                    )
+        return queries
 
-                # Developer sites
-                for site in Search.DEV_SITES:
-                    queries.append(
-                        f'"{name}" "{location}" site:{site}'
-                    )
+    @staticmethod
+    def get_query_confidence(query: str) -> float:
+        """
+        Estimate confidence that a search query relates to the user. Called before search result insertion into db
+        """
 
-                # Leak sites
-                for site in Search.LEAK_SITES:
-                    queries.append(
-                        f'"{name}" "{location}" site:{site}'
-                    )
+        query = query.lower()
 
-                # People search sites
-                for site in Search.PEOPLE_SITES:
-                    queries.append(
-                        f'"{name}" "{location}" site:{site}'
-                    )
+        # Exact email
+        if USER_EMAIL and USER_EMAIL.lower() in query:
+            return 1.0
 
-            # -----------------------------
-            # Documents
-            # -----------------------------
-            queries.extend([
-                f'"{name}" filetype:pdf',
-                f'"{name}" filetype:doc',
-                f'"{name}" filetype:docx',
-                f'"{name}" filetype:ppt',
-                f'"{name}" filetype:pptx',
-                f'"{name}" filetype:xls',
-                f'"{name}" filetype:xlsx',
-                f'"{name}" CV',
-                f'"{name}" resume',
-            ])
+        # Exact phone
+        for number in USER_NUMBERS:
+            if number.lower() in query:
+                return 1.0
 
-            # -----------------------------
-            # Contact information
-            # -----------------------------
-            queries.extend([
-                f'"{name}" contact',
-                f'"{name}" email',
-                f'"{name}" phone',
-                f'"{name}" address',
-            ])
+        # Username
+        for username in USER_USERNAME:
+            if username.lower() in query:
+                return 0.9
 
-            # -----------------------------
-            # Profile pages
-            # -----------------------------
-            queries.extend([
-                f'"{name}" inurl:author',
-                f'"{name}" inurl:profile',
-                f'"{name}" inurl:profiles',
-                f'"{name}" inurl:user',
-                f'"{name}" inurl:users',
-                f'"{name}" inurl:member',
-                f'"{name}" inurl:members',
-                f'"{name}" inurl:people',
-                f'"{name}" inurl:person',
-                f'intitle:"{name}"',
-            ])
+        # Name + location
+        for name in Search.build_name_permutations():
+            for location in USER_LOCATIONS:
+                if (
+                        name.lower() in query
+                        and location.lower() in query
+                ):
+                    return 0.6
 
-            # -----------------------------
-            # Company / staff pages
-            # -----------------------------
-            queries.extend([
-                f'"{name}" staff',
-                f'"{name}" team',
-                f'"{name}" profile',
-                f'"{name}" employee',
-                f'"{name}" contact',
-            ])
+        # Name only
+        for name in Search.build_name_permutations():
+            if name.lower() in query:
+                return 0.2
 
-        # Remove duplicates while preserving order
+        return 0.0
+
+    @staticmethod
+    def build_queries():
+        """Construct queries from helper functions"""
+
+        queries = []
+
+        queries += Search.email_queries()
+
+        queries += Search.phone_queries()
+
+        queries += Search.username_queries()
+
+        queries += Search.identity_queries()
+
         return list(dict.fromkeys(queries))
-
 
     @staticmethod
     def canonical(url: str) -> str:
@@ -289,22 +287,23 @@ class Search:
 
                         cursor.execute(
                             """
-                            INSERT
-                            OR IGNORE INTO SearchResults
+                            INSERT OR IGNORE INTO SearchResults
                                 (
                                     search_engine,
                                     search_query,
+                                    query_confidence,
                                     url,
                                     domain,
                                     page_title,
                                     snippet,
                                     result_rank
                                 )
-                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                             """,
                             (
                                 "duckduckgo",
                                 query,
+                                Search.get_query_confidence(query),
                                 url,
                                 parsed.netloc,
                                 result.get("title", ""),
@@ -324,8 +323,4 @@ if __name__ == "__main__":
 
     df = Search.search(max_results=10)
 
-    print(df.head())
-    print()
-    print(f"{len(df)} unique results found")
-
-    df.to_csv("search_results.csv", index=False)
+    print("Search complete.")

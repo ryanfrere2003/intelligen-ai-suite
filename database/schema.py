@@ -67,6 +67,8 @@ DATABASE_SCHEMA = {
         search_engine TEXT NOT NULL,
 
         search_query TEXT NOT NULL,
+        
+        query_confidence REAL DEFAULT 0, 
 
         url TEXT NOT NULL UNIQUE,
 
