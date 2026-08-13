@@ -113,16 +113,13 @@ class Scraper:
 
                 page_id = cursor.lastrowid
 
-                # Store email addresses
+                # Store extracted email addresses
                 for email in parsed.emails:
-
                     cursor.execute(
                         """
                         INSERT INTO PageEmails
-                        (
-                            page_id,
-                            email
-                        )
+                        (page_id,
+                         email)
                         VALUES (?, ?)
                         """,
                         (
@@ -243,6 +240,13 @@ class Scraper:
                 )
                 print(
                     f"  Social Links: {len(parsed.social_links)}"
+                )
+                print(
+                    f"  Addresses: {len(parsed.addresses)}"
+                )
+
+                print(
+                    f"  Phone Numbers: {len(parsed.phone_numbers)}"
                 )
 
             except Exception as e:
