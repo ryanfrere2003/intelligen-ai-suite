@@ -236,30 +236,23 @@ DATABASE_SCHEMA = {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
         sender_name TEXT NOT NULL,
-
         sender_email_username TEXT NOT NULL,
-
         sender_email_domain TEXT NOT NULL,
-
         original_sender_string TEXT NOT NULL,
 
-        subject TEXT NOT NULL,
-        
+        subject TEXT NOT NULL,    
         body TEXT NOT NULL,
-
         date TEXT NOT NULL,
 
         advertising_count INTEGER DEFAULT 0,
-
         marketing_count INTEGER DEFAULT 0,
-
         privacy_count INTEGER DEFAULT 0,
-
         newsletter_count INTEGER DEFAULT 0,
-
         notification_count INTEGER DEFAULT 0,
+        label TEXT DEFAULT 'unlabelled',
 
-        label TEXT DEFAULT 'unlabelled'
+        human_label TEXT,
+        human_verified BOOL DEFAULT FALSE
     );
     """
 }

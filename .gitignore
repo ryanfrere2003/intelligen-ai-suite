@@ -6,5 +6,7 @@
 *.csv
 *.pyc
 *.db
+*.pkl
+
 
 .env

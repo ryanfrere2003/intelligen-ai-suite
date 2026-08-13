@@ -22,3 +22,4 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 
 DATABASE_PATH = PROJECT_ROOT / "database" / "main.db"
 MAILBOX_PATH = PROJECT_ROOT / "data" / "raw" / "raw.mbox"
+MODEL_PATH = PROJECT_ROOT / "data" / "models"
