@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup
+import re
 
 
 SOCIAL_DOMAINS = [
@@ -15,6 +16,15 @@ SOCIAL_DOMAINS = [
     "youtube.com",
 ]
 
+EMAIL_PATTERN = re.compile(
+    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"
+)
+
+PHONE_PATTERN = re.compile(
+    r"(?:\+44\s?|\(?0\d{2,4}\)?[\s.-]?)"
+    r"\d{3,4}[\s.-]?\d{3,4}"
+)
+
 
 @dataclass
 class ParsedPage:
@@ -25,6 +35,9 @@ class ParsedPage:
 
     images: list[str] = field(default_factory=list)
     emails: list[str] = field(default_factory=list)
+    phone_numbers: list[str] = field(default_factory=list)
+    addresses: list[str] = field(default_factory=list)
+
     contact_links: list[str] = field(default_factory=list)
     privacy_links: list[str] = field(default_factory=list)
     social_links: list[str] = field(default_factory=list)
@@ -70,8 +83,10 @@ class PageParser:
 
         text = soup.get_text(" ", strip=True)
 
+        emails = EMAIL_PATTERN.findall(text)
+        phone_numbers = PHONE_PATTERN.findall(text)
+
         images = []
-        emails = []
         contact_links = []
         privacy_links = []
         social_links = []
@@ -114,6 +129,7 @@ class PageParser:
             text=text,
             images=list(dict.fromkeys(images)),
             emails=list(dict.fromkeys(emails)),
+            phone_numbers=list(dict.fromkeys(phone_numbers)),
             contact_links=list(dict.fromkeys(contact_links)),
             privacy_links=list(dict.fromkeys(privacy_links)),
             social_links=list(dict.fromkeys(social_links)),
