@@ -7,27 +7,20 @@ DATABASE_SCHEMA = {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
         message_id TEXT UNIQUE,
+        sender_name TEXT,
+        sender_email_username TEXT NOT NULL,
+        sender_email_domain TEXT NOT NULL,
+        original_sender_string TEXT NOT NULL,
 
         subject TEXT NOT NULL,
-
-        sender_name TEXT,
-
-        sender_email TEXT NOT NULL,
-
-        sender_domain TEXT,
-
-        received_date DATETIME,
-
-        body TEXT NOT NULL,
-
+        body TEXT NOT NULL,             
+        date DATETIME,
+        
         is_read INTEGER DEFAULT 0,
 
         classification TEXT,
-
         confidence REAL,
-
         processed INTEGER DEFAULT 0,
-
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
     """,

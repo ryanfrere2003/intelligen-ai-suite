@@ -15,6 +15,11 @@ USER_LOCATIONS = json.loads(os.getenv("USER_LOCATIONS", "[]"))
 USER_NUMBERS = json.loads(os.getenv("USER_NUMBERS", "[]"))
 
 #--------------
+#API Connections
+#--------------
+GMAIL_READ_ONLY = "https://www.googleapis.com/auth/gmail.readonly"
+
+#--------------
 # PATHS
 #--------------
 #TODO: you will need to provide your own mbox file

@@ -7,6 +7,8 @@
 *.pyc
 *.db
 *.pkl
-
+*.json
 
 .env
+
+

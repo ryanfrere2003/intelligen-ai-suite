@@ -12,8 +12,6 @@ from .labeller import label_email
 
 mailboxdata = mailbox.mbox(MAILBOX_PATH)
 
-emails = []
-
 #-------------------------------
 # HELPER FUNCTIONS
 #-------------------------------
@@ -72,6 +70,9 @@ def load_mailbox_data(data_source:mailbox.mbox) -> pd.DataFrame:
         datasource: mailbox.mbox
     Returns:
         df: pd.DataFrame"""
+
+    emails = []
+    
     for i, item in enumerate(data_source):
 
         if i % 100 == 0:
@@ -178,13 +179,13 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
     df.to_csv("gmail_dataset_clean.csv", index=False)
     return df
 
-
 def commit_data_to_db(dataframe:pd.DataFrame) -> None:
     """ commits clean mailbox data to the TrainingData table"""
     data = dataframe    
     conn = get_connection()
     data.to_sql("TrainingData", conn , if_exists="append", index=False)
     return
+
 
 #=========
 #logic
