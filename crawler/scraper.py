@@ -44,18 +44,55 @@ class Scraper:
 
             try:
 
-                response = session.get(
-                    url,
-                    timeout=15,
-                    allow_redirects=True,
-                )
+                if url.startswith("file://"):
 
-                response.raise_for_status()
+                    from pathlib import Path
+                    from urllib.parse import urlparse, unquote
 
-                content_type = response.headers.get(
-                    "Content-Type",
-                    "",
-                ).lower()
+                    parsed_url = urlparse(url)
+
+                    file_path = Path(
+                        unquote(parsed_url.path.lstrip("/"))
+                    )
+
+                    # Windows paths need the drive-letter slash restored.
+                    if len(file_path.parts) > 0 and len(file_path.parts[0]) == 2:
+                        file_path = Path(
+                            file_path.parts[0] + "\\"
+                            + "\\".join(file_path.parts[1:])
+                        )
+
+                    if not file_path.exists():
+                        raise FileNotFoundError(
+                            f"Test HTML file not found: {file_path}"
+                        )
+
+                    html = file_path.read_text(
+                        encoding="utf-8"
+                    )
+
+                    status_code = 200
+                    content_type = "text/html"
+                    final_url = url
+
+                else:
+
+                    response = session.get(
+                        url,
+                        timeout=15,
+                        allow_redirects=True,
+                    )
+
+                    response.raise_for_status()
+
+                    html = response.text
+                    status_code = response.status_code
+                    content_type = response.headers.get(
+                        "Content-Type",
+                        "",
+                    ).lower()
+
+                    final_url = response.url
 
                 if "text/html" not in content_type:
 
@@ -78,8 +115,8 @@ class Scraper:
                     continue
 
                 parsed = PageParser.parse(
-                    response.text,
-                    response.url,
+                    html,
+                    final_url,
                 )
 
                 # Store the page
@@ -100,12 +137,12 @@ class Scraper:
                     """,
                     (
                         search_result_id,
-                        response.status_code,
+                        status_code,
                         content_type,
                         parsed.title,
                         parsed.description,
                         parsed.keywords,
-                        response.text,
+                        html,
                         parsed.text,
                     ),
                 )
