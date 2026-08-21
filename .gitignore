@@ -2,6 +2,9 @@
 /venv
 /.idea
 /
+/data/models/distilbert/*
+/data/models/svm/*
+
 *.mbox
 *.csv
 *.pyc

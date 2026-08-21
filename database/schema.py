@@ -7,6 +7,7 @@ DATABASE_SCHEMA = {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
 
         message_id TEXT UNIQUE,
+        gmail_id TEXT UNIQUE,
         sender_name TEXT,
         sender_email_username TEXT NOT NULL,
         sender_email_domain TEXT NOT NULL,

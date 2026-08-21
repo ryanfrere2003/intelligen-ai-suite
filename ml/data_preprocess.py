@@ -6,9 +6,9 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from email.utils import parseaddr
 
-from config import MAILBOX_PATH, PROJECT_ROOT
+from config import MAILBOX_PATH
 from database.database import get_connection
-from .labeller import label_email
+from .data_labeller import label_email
 
 mailboxdata = mailbox.mbox(MAILBOX_PATH)
 
@@ -185,7 +185,6 @@ def commit_data_to_db(dataframe:pd.DataFrame) -> None:
     conn = get_connection()
     data.to_sql("TrainingData", conn , if_exists="append", index=False)
     return
-
 
 #=========
 #logic

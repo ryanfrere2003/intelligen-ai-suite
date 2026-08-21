@@ -2,19 +2,19 @@
 
 import pandas as pd
 
-from datetime import datetime
-
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.svm import LinearSVC
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
+from sklearn.metrics import classification_report
 
 import joblib
+from datetime import datetime
 
 from database import database
 from config import MODEL_PATH, PROJECT_ROOT
-from .labeller import LABEL_KEYWORDS
+from .data_labeller import LABEL_KEYWORDS
+from .data import get_training_data
 
 #=================
 # Helpers
@@ -72,39 +72,6 @@ def record_training_performance(report) -> None:
 # Main Functions
 #=================
 
-
-def get_training_data(email_id:int| None=None) -> pd.DataFrame:
-    """ takes training data from the database TraininData table and returns a dataframe
-    of all emails in the table
-        Requires:
-            email_id(int): a known email integer.
-            email_id(none): all emails in the table.
-        Returns:
-            A dataframe object containing the query result."""
-        
-    conn = database.get_connection()
-
-    if email_id is None:
-        data = pd.read_sql("SELECT * FROM TrainingData", conn)
-
-        #remove unlabelled and ambiguous
-        print(f"data is currently contains: ({len(data)}) emails.")
-        data = data[~data["label"].isin(["unlabelled","ambiguous"])]
-        print(f"after filtering to suitable data contains: ({len(data)}) emails.")
-
-        #state health of the sample
-        print(data["label"].value_counts())
-
-    else:
-        data = pd.read_sql("SELECT * FROM TrainingData WHERE id=?",conn ,params=(email_id,))
-
-    data.set_index("id",inplace=True)
-
-    #formats labels and ensures retrained labels are used
-    data["training_label"] = data["human_label"].where(data["human_verified"].astype(bool),data["label"])
-
-    return data
-
 def ml_model(load=False) -> Pipeline | None:
     """Create a new ML model or load the existing one."""
 
@@ -136,7 +103,7 @@ def ml_model(load=False) -> Pipeline | None:
 
 def training_round(data: pd.DataFrame,model_load=False,) -> tuple:
     """takes a filtered dataframe and concatenates fields 
-    for ML training"""
+    for ML training, running it against the ML model."""
 
     df = data.copy()
 
@@ -182,29 +149,36 @@ def commit_learning(model) -> None:
     joblib.dump(model, f"{MODEL_PATH}/email_classifier.pkl")
     return
 
-#may need to be removed once UI is functional
 def perform_training_loop() -> None:
     """ performs a full training loop"""
 
     df = get_training_data()
     model, X_test, y_test = training_round(df)
-    predictions = model.predict(X_test)
 
-    #stores and reports iteritive training performance
-    report = classification_report(y_test, predictions, output_dict=True)
-    record_training_performance(report)
+    #training model predictions
+    svm_prediction = model.predict(X_test)
 
-    #prints to console most common issue domains (pattern spotting for iterative training)
-    results = pd.DataFrame({"email_id": X_test.index, "email": X_test.values,"actual": y_test.values, "predicted": predictions})
-    results["sender_email_domain"] = df.loc[results["email_id"],"sender_email_domain"].values
+    #training model evaluation
+    svm_report = classification_report(y_test, svm_prediction, output_dict=True)
+    print("\nSVM Performance:")
+    print(svm_report)
+
+    #record report for performance tracking
+    record_training_performance(svm_report)
 
     #saves the mistakes to the csv file used in the retraining loop
+    results = pd.DataFrame({"email_id": X_test.index, "email": X_test.values,"actual": y_test.values, "predicted": svm_prediction})
+    results["sender_email_domain"] = df.loc[results["email_id"],"sender_email_domain"].values
     mistakes = results[results["actual"] != results["predicted"]]
     mistakes = mistakes.drop(columns=["email"])
     mistakes.to_csv(PROJECT_ROOT/"data"/"training_results.csv", index=False)
 
+    # Transformer evaluation
+    evaluate_transformer(X_test,y_test,50)
+
+
     commit_learning(model)
-    perform_corrective_training()
+    #perform_corrective_training()
 
     return
 
@@ -220,7 +194,7 @@ def perform_corrective_training() -> None:
 
     for email_id, item in corrections.iterrows():
 
-        email = get_training_data(email_id)
+        email = get_training_data(email_id).iloc[0]
 
         print("")
         print(f"Email ID: {email_id}")
@@ -259,4 +233,4 @@ def perform_corrective_training() -> None:
 #logic
 #=================
 
-perform_training_loop()
+#perform_training_loop()

@@ -17,7 +17,7 @@ USER_NUMBERS = json.loads(os.getenv("USER_NUMBERS", "[]"))
 #--------------
 #API Connections
 #--------------
-GMAIL_READ_ONLY = "https://www.googleapis.com/auth/gmail.readonly"
+GMAIL_READ_ONLY = ["https://www.googleapis.com/auth/gmail.readonly"]
 
 #--------------
 # PATHS
@@ -28,3 +28,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 DATABASE_PATH = PROJECT_ROOT / "database" / "main.db"
 MAILBOX_PATH = PROJECT_ROOT / "data" / "raw" / "raw.mbox"
 MODEL_PATH = PROJECT_ROOT / "data" / "models"
+
+CLASSIFIER_MODEL = MODEL_PATH / "svm"
+DISTILBERT_MODEL = MODEL_PATH / "distilbert"

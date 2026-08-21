@@ -2,9 +2,8 @@ from datetime import datetime
 
 import requests
 
+from .parser import PageParser
 from database.database import get_connection
-from parser import PageParser
-
 
 HEADERS = {
     "User-Agent": (
