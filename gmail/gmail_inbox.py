@@ -149,12 +149,6 @@ def clean_gmail_data(inbox_dataframe:pd.DataFrame) -> pd.DataFrame:
 
     df.to_csv("gmail_inbox_clean.csv", index=False)
     return df
-
-#TODO
-def commit_gmail_data() -> None:
-    """ reads the saved gmail_inbox_clean.csv and uses the gmail_id to
-    check if an email exists. modiying the database as appropriate to reflect
-    any actions taken"""
     
 #============
 #logic

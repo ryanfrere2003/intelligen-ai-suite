@@ -1,69 +1,33 @@
 """ contains all functions and processes relating to distilbert model training, providing
-a secondary method to classify text using a token transformer NLP."""
+a secondary method to classify text using a token transformer NLP. Originally this
+function used zero-shot to categorise emails but that approach led to poor results
+it is vital tokenizer initializes for this version of the model to correctly function."""
 
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, TrainingArguments, Trainer
+from transformers import TrainingArguments, Trainer
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, #TODO: accuracy_score
+from sklearn.metrics import classification_report #TODO: accuracy_score
 from datasets import Dataset
 import pandas as pd
 
 from config import DISTILBERT_MODEL
 from .data_labeller import LABEL_KEYWORDS
 from .data import get_training_data
+from .model_distilbert import distilbert
 
 #model name and store
 MODEL_NAME = "distilbert-base-uncased"
 MODEL_STORE = DISTILBERT_MODEL
+model,tokenizer = distilbert(load=True)
 
 #label conversions
 LABELS = list(LABEL_KEYWORDS.keys())
 LABEL_TO_ID = {label: i for i, label in enumerate(LABELS)}
 ID_TO_LABEL = {i: label for label, i in LABEL_TO_ID.items()}
 
-
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSequenceClassification.from_pretrained(
-    MODEL_NAME,
-    num_labels=len(LABELS),
-    id2label=ID_TO_LABEL,
-    label2id=LABEL_TO_ID,
-)
-
-#============
-# functions
-#============
-
-def create_dataset(df:pd.DataFrame) -> Dataset:
-    """Convert the pd.Dataframe email data into a Hugging Face dataset."""
-
-    dataset = Dataset.from_pandas(df[["email_text", "training_label"]])
-    dataset = dataset.rename_column("training_label","label")
-    dataset = dataset.map(lambda x: {"label": LABEL_TO_ID[x["label"]]}    )
-    return dataset
-
-def prepare_data(df):
-    """Prepare email data for DistilBERT from the database"""
-
-    df = df.copy()
-
-    df["email_text"] = (
-        df["original_sender_string"].fillna("")
-        + " "
-        + df["subject"].fillna("")
-        + " "
-        + df["body"].fillna("")
-    )
-
-    training_df, testing_df = train_test_split(
-        df,
-        test_size=0.2,
-        random_state=42,
-        stratify=df["training_label"]
-    )
-
-    return training_df, testing_df
-
-def tokenize_dataset(dataset:Dataset) -> Dataset:
+#===========
+# helper
+#===========
+def tokenize_dataset(dataset:Dataset, tokenizer=tokenizer) -> Dataset:
     """Tokenise email Dataset text for DistilBERT."""
 
     return dataset.map(
@@ -76,7 +40,46 @@ def tokenize_dataset(dataset:Dataset) -> Dataset:
         batched=True
     )
 
-def train_distilbert(training_df:pd.DataFrame,testing_df:pd.DataFrame):
+def create_dataset(df:pd.DataFrame) -> Dataset:
+    """Convert the pd.Dataframe email data into a Hugging Face dataset."""
+
+    dataset = Dataset.from_pandas(df[["email_text", "training_label"]])
+    dataset = dataset.rename_column("training_label","label")
+    dataset = dataset.map(lambda x: {"label": LABEL_TO_ID[x["label"]]}    )
+    return dataset
+
+def prepare_data(df:pd.DataFrame) -> tuple[pd.DataFrame,pd.DataFrame]:
+    """Prepare email data for DistilBERT from the database takes in one dataframe
+    and returns a tuple of 2 randomly sorted dataframes proving test data and
+    training data."""
+
+    df = df.copy()
+
+    df["email_text"] = (
+        df["original_sender_string"].fillna("")
+        + " "
+        + df["subject"].fillna("")
+        + " "
+        + df["body"].fillna("")
+    )
+
+    #outputs a tuple of dataframes
+    training_df:pd.DataFrame
+    testing_df:pd.DataFrame
+    
+    training_df,testing_df= train_test_split(
+        df,
+        test_size=0.2,
+        random_state=42,
+        stratify=df["training_label"]
+    )
+
+    return training_df, testing_df
+#============
+# functions
+#============
+#TODO RESUME HERE 
+def train_distilbert(training_df:pd.DataFrame,testing_df:pd.DataFrame,model=model):
     """ takes training and testing dataframes and performs a training
     round on distilbert."""
 
@@ -88,15 +91,17 @@ def train_distilbert(training_df:pd.DataFrame,testing_df:pd.DataFrame):
 
     training_args = TrainingArguments(
         output_dir=f"{DISTILBERT_MODEL}",
+        save_total_limit=2, #helps if there is a corruption, do not set to 1.
         num_train_epochs=2,
         per_device_train_batch_size=8,
         per_device_eval_batch_size=8,
         logging_steps=50,
         save_strategy="epoch",
-        report_to="none"
+        report_to="none",
+        
     )
 
-    trainer = Trainer(
+    trainer_class = Trainer(
         model=model,
         args=training_args,
         train_dataset=train_dataset,
@@ -104,6 +109,12 @@ def train_distilbert(training_df:pd.DataFrame,testing_df:pd.DataFrame):
     )
 
     trainer.train()
+
+    #save training
+    trainer_class.save_model(f"{MODEL_STORE}")
+    tokenizer.save_pretrained(f"{MODEL_STORE}")
+
+
     return trainer
 
 def evaluate_distilbert(trainer, testing_df):
@@ -160,9 +171,7 @@ evaluate_distilbert(
     testing_df
 )
 
-#save training
-trainer.save_model(f"{MODEL_STORE}")
-tokenizer.save_pretrained(f"{MODEL_STORE}")
+
 print(f"DistilBERT model saved to: {MODEL_STORE}")
 
 print("\nDistilBERT training complete.")
