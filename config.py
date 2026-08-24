@@ -29,5 +29,5 @@ MAILBOX_PATH = PROJECT_ROOT / "data" / "raw" / "raw.mbox"
 MODEL_PATH = PROJECT_ROOT / "data" / "models"
 AUTH_PATH = PROJECT_ROOT / "data" / "oauth2"
 
-CLASSIFIER_MODEL = MODEL_PATH / "svm"
+SVM_MODEL = MODEL_PATH / "svm"
 DISTILBERT_MODEL = MODEL_PATH / "distilbert"

@@ -7,7 +7,7 @@ from config import DISTILBERT_MODEL
 from .data_labeller import LABEL_KEYWORDS
 
 
-def distilbert(load:bool) -> tuple[AutoModelForSequenceClassification,AutoTokenizer]:
+def distilbert(load:bool) -> tuple:
     """ loads and returns a distilbert model with it's associated tokenizer"""
 
     #model name and store
