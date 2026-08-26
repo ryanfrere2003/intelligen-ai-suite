@@ -19,6 +19,9 @@ USER_NUMBERS = json.loads(os.getenv("USER_NUMBERS", "[]"))
 #--------------
 GMAIL_READ_ONLY = ["https://www.googleapis.com/auth/gmail.readonly"]
 
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENAI_API_SECRET = os.getenv("OPENAI_API_KEY")
+
 #--------------
 # PATHS
 #--------------

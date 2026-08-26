@@ -21,6 +21,22 @@ class RiskCalculator:
             elif row["entity_type"] == "phone":
                 score += 40
 
-        print(
-            f"Page {page_id} risk score: {score}"
-        )
+            elif row["entity_type"] == "username":
+                score += 15
+
+            elif row["entity_type"] == "name":
+                score += 10
+
+            elif row["entity_type"] == "location":
+                score += 5
+
+        # Prevent score exceeding 100
+        score = min(score, 100)
+
+        cursor.execute("""
+            UPDATE CrawledPages
+            SET risk_score=?
+            WHERE id=?
+        """, (score, page_id))
+
+        print(f"Page {page_id} risk score: {score}")
