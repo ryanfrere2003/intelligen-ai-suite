@@ -5,6 +5,29 @@ from sklearn.metrics import classification_report
 
 from config import PROJECT_ROOT
 
+#============
+#helper
+#============
+
+def get_next_training_iteration() -> int:
+    """Return the next training iteration number for the model comparison csv."""
+
+    comparison_path = (PROJECT_ROOT/ "data" / "model_comparison_history.csv")
+
+    if not comparison_path.exists():
+        return 1
+
+    history = pd.read_csv(comparison_path)
+
+    if history.empty:
+        return 1
+
+    return int(history["training_iteration"].max()) + 1
+
+#===========
+#functions
+#===========
+
 def evaluate_model(actual: list[str],predictions: list[str], model_name: str) -> dict:
     """Evaluate model predictions using a standard classification report."""
 
@@ -47,13 +70,70 @@ def compare_models(svm_results: dict,distilbert_results: dict) -> pd.DataFrame:
     return comparison
 
 def save_model_comparison(comparison: pd.DataFrame) -> None:
-    """Save model comparison results to a CSV file."""
+    """Save model comparison results for a training iteration."""
 
-    comparison_path = PROJECT_ROOT / "data" / "model_comparison.csv"
+    comparison_path = (PROJECT_ROOT/ "data" / "model_comparison_history.csv")
+
+    comparison = comparison.copy()
+    comparison["training_iteration"] = get_next_training_iteration()
+
+    if comparison_path.exists():
+        existing = pd.read_csv(comparison_path)
+
+        comparison = pd.concat(
+            [existing, comparison],
+            ignore_index=True
+        )
 
     comparison.to_csv(
         comparison_path,
-        index=True
+        index=False
     )
 
     print(f"Model comparison saved to: {comparison_path}")
+
+def compare_predictions(svm_results: dict,distilbert_results: dict) -> pd.DataFrame:
+    """Compare SVM and DistilBERT predictions against the labelled data.
+    returns problematic emails for human review."""
+
+    comparison = pd.DataFrame({
+        "email_id": svm_results["x_test"].index,
+        "actual": svm_results["y_test"].values, #taken from labeller db entry in TrainingData table
+        "svm_prediction": svm_results["predictions"],
+        "distilbert_prediction": distilbert_results["predictions"]
+    })
+
+    comparison["svm_correct"] = (
+        comparison["svm_prediction"] == comparison["actual"]
+    )
+
+    comparison["distilbert_correct"] = (
+        comparison["distilbert_prediction"] == comparison["actual"]
+    )
+
+    comparison["models_agree"] = (
+        comparison["svm_prediction"]
+        == comparison["distilbert_prediction"]
+    )
+
+    return comparison
+
+def get_human_review_cases(comparison: pd.DataFrame) -> pd.DataFrame:
+    """Return emails requiring human review."""
+
+    # return the all cases where SVM is not correct OR DistilBERT is not correct OR where the model disagree.
+    review_cases = comparison[
+        (~comparison["svm_correct"])
+        | (~comparison["distilbert_correct"])
+        | (~comparison["models_agree"])
+    ]
+
+    return review_cases
+
+def save_human_review_cases(comparison: pd.DataFrame) -> None:
+    """ saves the review cases dataframe to CSV in the data directory
+    for review by a human."""
+    HIL_FILE_PATH = PROJECT_ROOT / "data" / "human_review_cases.csv"
+    comparison.to_csv(HIL_FILE_PATH, index=True)
+    print("human reviw file successfully created.")
+    return

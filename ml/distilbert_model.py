@@ -6,7 +6,6 @@ from transformers.trainer_utils import get_last_checkpoint
 from config import DISTILBERT_MODEL
 from .data_labeller import LABEL_KEYWORDS
 
-
 def distilbert(load:bool) -> tuple:
     """ loads and returns a distilbert model with it's associated tokenizer"""
 
