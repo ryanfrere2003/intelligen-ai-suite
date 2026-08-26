@@ -88,10 +88,7 @@ def run_distilbert_training(training_df:pd.DataFrame,testing_df:pd.DataFrame,dis
 
     return trainer_class
 
-def predict_distilbert(
-    trainer_class,
-    testing_df: pd.DataFrame
-) -> dict:
+def predict_distilbert(trainer_class,testing_df: pd.DataFrame) -> dict:
     """Generate predictions from DistilBERT using the supplied test data."""
 
     test_dataset = create_dataset(testing_df)
@@ -102,15 +99,8 @@ def predict_distilbert(
     predicted_ids = predictions.predictions.argmax(axis=1)
     actual_ids = predictions.label_ids
 
-    predicted_labels = [
-        ID_TO_LABEL[i]
-        for i in predicted_ids
-    ]
-
-    actual_labels = [
-        ID_TO_LABEL[i]
-        for i in actual_ids
-    ]
+    predicted_labels = [ID_TO_LABEL[i] for i in predicted_ids]
+    actual_labels = [ID_TO_LABEL[i] for i in actual_ids]
 
     return {
         "predictions": predicted_labels,
