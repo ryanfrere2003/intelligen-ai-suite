@@ -97,6 +97,8 @@ DATABASE_SCHEMA = {
         confidence REAL,
     
         analysed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        
+        status TEXT NOT NULL DEFAULT 'pending',
     
         FOREIGN KEY (page_id)
             REFERENCES CrawledPages(id)
@@ -129,8 +131,6 @@ DATABASE_SCHEMA = {
         verification_status TEXT DEFAULT 'pending',
         
         risk_score REAL DEFAULT 0,
-        
-        match_score REAL DEFAULT 0,
     
         crawled_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         
