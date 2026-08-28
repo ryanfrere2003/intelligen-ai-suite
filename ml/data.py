@@ -5,6 +5,16 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 from database.database import get_connection
+from .data_preprocess import load_mailbox_data, clean_mailbox_data, commit_data_to_db
+#====================
+#helper functions
+#====================
+def training_data_available() -> bool:
+    """Check whether TrainingData contains more than one record."""
+    conn = get_connection()
+    result = conn.execute("SELECT COUNT(*) FROM TrainingData").fetchone()[0]
+    conn.close()
+    return result > 1
 
 #====================
 # Both states
@@ -83,27 +93,20 @@ def prepare_data_for_training_split(df:pd.DataFrame) -> tuple[pd.DataFrame,pd.Da
 # Regular functions
 #====================
 
-def get_user_mailbox_data():
-    """ takes user data from the database emails table and returns a dataframe
-    of all emails in the table"""
-    conn = get_connection()
-    data = pd.read_sql("SELECT * FROM Emails", conn)
-    data.set_index("id",inplace=True)
-    conn.close()
-    return data
+def initialize_training_data() -> None:
+    """ initializes the training data and database"""
 
-def report_classified_user_emails(mailbox_data:pd.DataFrame) -> pd.DataFrame:
-    """ reports all of the emails a user currently has classified."""
+    if not training_data_available():
+        mailbox_raw = load_mailbox_data()
+        mailbox_clean = clean_mailbox_data(mailbox_raw)
+        commit_data_to_db(mailbox_clean)
 
-    data = mailbox_data.copy()
-
-    #return a table which contains only emails which have been classified
-    data = data[data["classification"].notna()]
-
-    return data
-
-#TODO
-def update_user_emails_table(email_dataframe:pd.DataFrame, results_frame:pd.DataFrame) -> None:
-    """ takes processed information about user emails and updates the user emails table for
-    future reference."""
+    else:
+        choice = input("Training data detected, do you want to reset the training database? (Y/N): ")
+        if choice.upper() == "Y":
+            conn = get_connection()
+            conn.execute("DELETE FROM TrainingData")
+            conn.commit()
+            conn.close()
+            print("training data deleted. please call the training function again.")
     return

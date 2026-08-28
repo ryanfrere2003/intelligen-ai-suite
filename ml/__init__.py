@@ -1,2 +1,4 @@
 """Machine learning module containing 2 models; svm and distilbert. svm which uses TF-IDF + LinearSVC and
-distilbert, transformer based language model using tokenisation."""
+distilBERT, transformer based language model using tokenisation."""
+
+from .main import email_classifier_main

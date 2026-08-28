@@ -2,30 +2,6 @@ import sqlite3
 
 DATABASE_SCHEMA = {
 
-    "Emails": """
-    CREATE TABLE IF NOT EXISTS Emails (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-
-        message_id TEXT UNIQUE,
-        gmail_id TEXT UNIQUE,
-        sender_name TEXT,
-        sender_email_username TEXT NOT NULL,
-        sender_email_domain TEXT NOT NULL,
-        original_sender_string TEXT NOT NULL,
-
-        subject TEXT NOT NULL,
-        body TEXT NOT NULL,             
-        date DATETIME,
-        
-        is_read INTEGER DEFAULT 0,
-
-        classification TEXT,
-        confidence REAL,
-        processed INTEGER DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    );
-    """,
-
     "Companies": """
     CREATE TABLE IF NOT EXISTS Companies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

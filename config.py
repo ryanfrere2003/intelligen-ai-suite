@@ -28,7 +28,8 @@ OPENAI_API_SECRET = os.getenv("OPENAI_API_KEY")
 PROJECT_ROOT = Path(__file__).resolve().parent #for training you must provide your own mbox file.
 
 DATABASE_PATH = PROJECT_ROOT / "database" / "main.db"
-MAILBOX_PATH = PROJECT_ROOT / "data" / "raw" / "raw.mbox"
+MAILBOX_DIR = PROJECT_ROOT / "data" / "raw"
+MAILBOX_PATH = MAILBOX_DIR / "raw.mbox"
 MODEL_PATH = PROJECT_ROOT / "data" / "models"
 AUTH_PATH = PROJECT_ROOT / "data" / "oauth2"
 

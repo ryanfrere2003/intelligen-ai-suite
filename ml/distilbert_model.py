@@ -22,7 +22,7 @@ def distilbert(load:bool) -> tuple:
             print(f"an error occured could not load tokenizer or model files: {e}")
 
     #if model doesnt exist or it cant be loaded, initiate a new model and tokenizer
-    print("initiating tokenizer and model for distilBERT....\n")
+    print("initiating a new tokenizer and model for distilBERT....\n")
        
     #label conversions
     labels = list(LABEL_KEYWORDS.keys())

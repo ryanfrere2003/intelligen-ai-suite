@@ -7,29 +7,29 @@ import pandas as pd
 #detection lists
 #====================
 LABEL_KEYWORDS = {
- "advertising": {
-    "strong": [
-        "buy now",
-        "shop now",
-        "discount code",
-        "promo code",
-        "coupon",
-        "voucher code",
-        "limited time offer",
-        "free shipping",
-        "free delivery",
-        "save %",
-        "clearance",
-        "flash sale",
-        "exclusive offer",
-        "exclusive deal",
-        "offer ends",
-        "last chance",
-        "order now",
-        "claim your"
-        ],
+    "advertising": {
+        "strong": [
+            "buy now",
+            "shop now",
+            "discount code",
+            "promo code",
+            "coupon",
+            "voucher code",
+            "limited time offer",
+            "free shipping",
+            "free delivery",
+            "save %",
+            "clearance",
+            "flash sale",
+            "exclusive offer",
+            "exclusive deal",
+            "offer ends",
+            "last chance",
+            "order now",
+            "claim your"
+            ],
 
-    "weak": [
+        "weak": [
         "sale",
         "discount",
         "deal",
@@ -42,7 +42,7 @@ LABEL_KEYWORDS = {
         "free trial"
         ]
     },
-        "marketing": {
+    "marketing": {
         "strong": [
             "introducing",
             "announcing",
@@ -257,8 +257,3 @@ def label_email(email:pd.Series) -> dict:
             counts["label"] = highest[0].split("_")[0] # type: ignore
 
     return counts
-
-
-#====================
-#logic
-#===================

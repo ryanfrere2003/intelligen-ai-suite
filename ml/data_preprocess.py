@@ -6,11 +6,9 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from email.utils import parseaddr
 
-from config import MAILBOX_PATH
+from config import MAILBOX_PATH, MAILBOX_DIR
 from database.database import get_connection
 from .data_labeller import label_email
-
-mailboxdata = mailbox.mbox(MAILBOX_PATH)
 
 #-------------------------------
 # HELPER FUNCTIONS
@@ -63,13 +61,15 @@ def clean_unicode(text:str) -> str:
 #-------------------------------
 #MAIN FUNCTIONS
 #-------------------------------
-def load_mailbox_data(data_source:mailbox.mbox) -> pd.DataFrame:
+def load_mailbox_data() -> pd.DataFrame:
     """ loads in a mbox file and parses all emails as a dataframe,
     converting the file to csv and loading it as a dataframe in memory.
     Args:
         datasource: mailbox.mbox
     Returns:
         df: pd.DataFrame"""
+
+    data_source = mailbox.mbox(MAILBOX_PATH)
 
     emails = []
     
@@ -87,7 +87,7 @@ def load_mailbox_data(data_source:mailbox.mbox) -> pd.DataFrame:
 
 
     df = pd.DataFrame(emails)
-    df.to_csv("gmail_dataset.csv", index=False)
+    df.to_csv(f"{MAILBOX_DIR}/gmail_dataset.csv", index=False)
     print(df.head())
     return df
 
@@ -176,7 +176,7 @@ def clean_mailbox_data(mailbox_data_object:pd.DataFrame) -> pd.DataFrame:
         df.loc[index,"notification_count"] = outcome.get("notification_count")
         df.loc[index,"label"] = outcome.get("label")
  
-    df.to_csv("gmail_dataset_clean.csv", index=False)
+    df.to_csv(f"{MAILBOX_DIR}/gmail_dataset_clean.csv", index=False)
     return df
 
 def commit_data_to_db(dataframe:pd.DataFrame) -> None:
@@ -185,11 +185,3 @@ def commit_data_to_db(dataframe:pd.DataFrame) -> None:
     conn = get_connection()
     data.to_sql("TrainingData", conn , if_exists="append", index=False)
     return
-
-#=========
-#logic
-#=========
-
-df_raw = load_mailbox_data(mailboxdata)
-def_clean = clean_mailbox_data(df_raw)
-commit_data_to_db(def_clean)
