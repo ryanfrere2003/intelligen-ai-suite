@@ -2,6 +2,7 @@ from database.database import get_connection
 
 from generative.takedown import generate_takedown_request
 from generative.settings import select_request_settings
+from generative.xai import explain_generation, display_explanation
 
 
 
@@ -181,7 +182,18 @@ def generate_request_for_page(page) -> None:
             source_url=page["source_url"],
             organisation=organisation,
             reason=reason,
+            settings=settings
         )
+        explanation = explain_generation(
+            entities=entities,
+            source_url=page["source_url"],
+            organisation=organisation,
+            reason=reason,
+            request=request,
+            settings=settings,
+        )
+
+        display_explanation(explanation)
 
     except Exception as error:
         connection.close()
@@ -409,6 +421,17 @@ def regenerate_request(request, connection, cursor) -> None:
             reason=reason,
             settings=settings,
         )
+
+        explanation = explain_generation(
+            entities=entities,
+            source_url=request["source_url"],
+            organisation=request["company_name"] or "the organisation",
+            reason=reason,
+            request=generated_request,
+            settings=settings,
+        )
+
+        display_explanation(explanation)
 
     except Exception as error:
         print(f"Failed to regenerate request: {error}")
