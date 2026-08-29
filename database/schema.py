@@ -178,8 +178,6 @@ DATABASE_SCHEMA = {
     
         tone TEXT,
     
-        recipient_email TEXT,
-    
         status TEXT DEFAULT 'Draft',
     
         sent_date DATETIME,
@@ -192,9 +190,6 @@ DATABASE_SCHEMA = {
     
         FOREIGN KEY (company_id)
             REFERENCES Companies(id),
-    
-        FOREIGN KEY (email_id)
-            REFERENCES Emails(id),
     
         FOREIGN KEY (page_id)
             REFERENCES CrawledPages(id)
