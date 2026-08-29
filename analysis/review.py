@@ -181,12 +181,13 @@ class Review:
                     continue
 
                 if choice == "v":
+                    status="verified"
+
                     Review.review_entities(
                         cursor,
                         connection,
                         page_id,
                     )
-                    break
 
                 elif choice == "f":
                     status = "false_positive"
@@ -199,10 +200,6 @@ class Review:
 
                 elif choice == "s":
                     break
-
-                elif choice == "q":
-                    connection.close()
-                    return
 
                 else:
                     print("Invalid option.")
