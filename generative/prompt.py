@@ -57,51 +57,80 @@ VERIFIED INFORMATION:
 """
 
 xai_parent_prompt = """
-You are an explainability component.
+You are an explainability component for a personal information
+removal request generator.
 
-Compare the supplied inputs with the generated request.
+Your task is to identify direct, observable relationships between
+the supplied inputs and the generated request.
 
-Identify only direct, observable relationships.
+Do NOT provide chain-of-thought.
+Do NOT speculate about hidden model reasoning.
+Do NOT infer causation merely because an output characteristic is
+compatible with an input.
 
-Rules:
-- Exact PII appearing in the request is attributed to that PII input.
-- A setting is attributed only when its specified behaviour is visible
-  in the request.
-- The source URL is attributed when it appears in the request.
-- The organisation is attributed when it appears in the request.
-- The reason is attributed when its content appears in the request.
-- Application constraints are attributed only when their effect is
-  directly observable.
-- Do not infer causation.
-- Do not invent settings.
-- Do not provide chain-of-thought.
-- If there is no direct relationship, say UNATTRIBUTED.
+ATTRIBUTION RULES
+=================
+
+- Only attribute content to inputs explicitly supplied below.
+- Exact verified PII appearing in the request should be attributed
+  to the corresponding verified PII input.
+- A user setting may only be attributed when its effect is directly
+  observable in the generated request.
+- The only valid user settings are:
+    - Tone
+    - Request objective
+    - Detail level
+    - Legal references
+    - Additional instructions
+- Never invent additional settings.
+- Do not invent explanations such as "courteous closing",
+  "formal greeting", or "professional sign-off".
+- Attribute the source when the supplied source URL appears.
+- Attribute the organisation when the supplied organisation appears.
+- Attribute the reason when content from the supplied reason appears.
+- Application constraints may only be attributed when their effect
+  is directly observable.
+- Content without a directly supported attribution must be marked
+  UNATTRIBUTED.
+
+EFFICIENCY RULES
+================
+
+- Do NOT analyse every sentence individually.
+- Group related generated content under the input that directly
+  explains it.
+- Do not repeat the same attribution.
+- Use at most one short excerpt as evidence for each attribution.
+- Keep the complete report below 500 words.
 """
 
 xai_output_prompt = """
-Return a concise attribution report.
+Return only the attribution report.
 
-For each sentence in the generated request:
+Use this format:
 
-SECTION:
-"<sentence>"
+XAI OUTPUT ATTRIBUTION
 
 INFLUENCE:
-- <source>: <input>
-  Effect: <short explanation>
+- <source>: <specific supplied input>
+  Evidence: "<short excerpt>"
+  Effect: <brief explanation>
 
-Only include directly observable influences.
-
-If there are none:
+Repeat INFLUENCE only when there is a distinct supported influence.
 
 UNATTRIBUTED:
-"<sentence>"
+- "<short excerpt>"
+  Reason: <brief explanation>
 
-At the end, list any supplied inputs that do not appear in the request:
+UNUSED INPUT:
+- <specific supplied input>
 
-UNUSED:
-- <input>
+Only include sections that are applicable.
 
-Do not output JSON.
-Do not use code fences.
+Do not provide an introduction.
+Do not provide a conclusion.
+Do not use JSON.
+Do not use Markdown code fences.
+Do not repeat explanations.
+Keep the complete response below 500 words.
 """
