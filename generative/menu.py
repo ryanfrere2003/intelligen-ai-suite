@@ -18,9 +18,7 @@ def get_verified_pages_without_requests():
             cp.id AS page_id,
             sr.url AS source_url,
             c.id AS company_id,
-            c.company_name,
-            c.privacy_email,
-            c.contact_email
+            c.company_name
 
         FROM CrawledPages cp
 
@@ -184,6 +182,11 @@ def generate_request_for_page(page) -> None:
             reason=reason,
             settings=settings
         )
+        print("=" * 80)
+        print("REQUEST GENERATED")
+        print("=" * 80)
+        print(request)
+
         explanation = explain_generation(
             entities=entities,
             source_url=page["source_url"],
@@ -192,7 +195,9 @@ def generate_request_for_page(page) -> None:
             request=request,
             settings=settings,
         )
-
+        print("=" * 80)
+        print("EXPLANATION GENERATED")
+        print("=" * 80)
         display_explanation(explanation)
 
     except Exception as error:
@@ -200,27 +205,20 @@ def generate_request_for_page(page) -> None:
         print(f"Failed to generate request: {error}")
         return
 
-    recipient_email = (
-        page["privacy_email"]
-        or page["contact_email"]
-    )
-
     cursor.execute(
         """
         INSERT INTO GDPRRequests (
             company_id,
             page_id,
             generated_request,
-            recipient_email,
             status
         )
-        VALUES (?, ?, ?, ?, 'Draft')
+        VALUES (?, ?, ?, 'Draft')
         """,
         (
             page["company_id"],
             page_id,
             request,
-            recipient_email,
         ),
     )
 
@@ -229,11 +227,6 @@ def generate_request_for_page(page) -> None:
 
     print()
     print("=" * 80)
-    print("REQUEST GENERATED")
-    print("=" * 80)
-    print(request)
-    print("=" * 80)
-    print(f"Recipient: {recipient_email or 'No email found'}")
 
 def show_previous_requests() -> None:
     """Display previous requests and allow regeneration."""
@@ -248,7 +241,6 @@ def show_previous_requests() -> None:
             gr.company_id,
             gr.page_id,
             gr.generated_request,
-            gr.recipient_email,
             gr.status,
             gr.sent_date,
             gr.response_date,
@@ -331,7 +323,6 @@ def show_request_details(request, connection, cursor) -> None:
 
     print(f"Organisation : {request['company_name'] or 'Unknown'}")
     print(f"Source       : {request['source_url']}")
-    print(f"Recipient    : {request['recipient_email'] or 'None'}")
     print(f"Status       : {request['status']}")
     print(f"Created      : {request['created_at']}")
     print(f"Sent         : {request['sent_date'] or 'Not sent'}")
@@ -422,6 +413,7 @@ def regenerate_request(request, connection, cursor) -> None:
             settings=settings,
         )
 
+
         explanation = explain_generation(
             entities=entities,
             source_url=request["source_url"],
@@ -443,16 +435,14 @@ def regenerate_request(request, connection, cursor) -> None:
             company_id,
             page_id,
             generated_request,
-            recipient_email,
             status
         )
-        VALUES (?, ?, ?, ?, 'Draft')
+        VALUES (?, ?, ?, 'Draft')
         """,
         (
             request["company_id"],
             page_id,
             generated_request,
-            request["recipient_email"],
         ),
     )
 
