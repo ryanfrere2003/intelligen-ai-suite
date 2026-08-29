@@ -1,6 +1,11 @@
 """Main terminal interface for the IntelliGen email classification system."""
 
 from ml.main import email_classifier_main
+from crawler.search import Search
+from crawler.scraper import Scraper
+from analysis.analyser import Analyser
+from analysis.review import Review
+from generative.menu import takedown_menu
 
 
 def display_menu() -> None:
@@ -43,6 +48,30 @@ def main() -> None:
             print("Loading web scraper privacy generative response tool...")
             print("=" * 50)
             print("\n")
+            while True:
+                print("1. Crawler")
+                print("2. Scraper")
+                print("3. Analysis")
+                print("4. Review")
+                print("5. Remediation")
+                print("6. Back")
+                choice= input("Select an option: ").strip()
+                if choice == "1":
+                    Search.search()
+                if choice == "2":
+                    Scraper.scrape_pending()
+                if choice == "3":
+                    Analyser.analyse_pages()
+                if choice == "4":
+                    Review.review_pending()
+                if choice == "5":
+                    takedown_menu()
+                if choice == "6":
+                    break
+
+
+
+
 
         elif choice == "3":
             print("\n")
