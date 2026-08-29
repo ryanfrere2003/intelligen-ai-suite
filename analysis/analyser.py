@@ -5,7 +5,7 @@ from analysis.risk import RiskCalculator
 
 
 class Analyser:
-    """Analysis app orchestrator, processes crawled pages and calls pii and risk modules"""
+    """Processes crawled pages and calls pii and risk helper functions to calculate score and verify information"""
     @staticmethod
     def analyse_pages():
 

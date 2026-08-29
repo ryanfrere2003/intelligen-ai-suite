@@ -1,0 +1,1 @@
+"""Uses generative AI to generate takedown requests in regard to the removal of users' data, inputs gathered from scrape/search and from email functionality"""

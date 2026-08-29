@@ -11,7 +11,7 @@ class Review:
 
     @staticmethod
     def review_pending() -> None:
-        """Review analysed pages and individual PII entities."""
+        """CLI interface for user to review analysed pages and individual PII entities."""
 
         connection = get_connection()
         cursor = connection.cursor()

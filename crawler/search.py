@@ -84,7 +84,7 @@ class Search:
 
         # First Middle Last
         for i in range(1, len(middle_names) + 1):
-            for combo in combinations(middle_names, i):
+            for combo in combinations(middle_names, i): #Generates any possible combination of given middle names along with first and last
                 names.add(
                     f"{USER_FIRST_NAME} {' '.join(combo)} {USER_LAST_NAME}"
                 )

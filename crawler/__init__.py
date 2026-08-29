@@ -1,0 +1,1 @@
+"""Uses PII defined in the .env file to search the internet for records of user's information using duck duck go api"""

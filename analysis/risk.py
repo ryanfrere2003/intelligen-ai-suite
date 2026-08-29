@@ -2,7 +2,7 @@ class RiskCalculator:
 
     @staticmethod
     def calculate(connection, page_id):
-
+        """Helper function for calculating risk scores for a given page."""
         cursor = connection.cursor()
 
         cursor.execute("""
