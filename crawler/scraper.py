@@ -2,7 +2,7 @@ from datetime import datetime
 
 import requests
 
-from .parser import PageParser
+from crawler.parser import PageParser
 from database.database import get_connection
 
 HEADERS = {
