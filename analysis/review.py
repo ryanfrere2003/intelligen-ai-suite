@@ -22,12 +22,11 @@ class Review:
         print("[2] Review possible false negatives (score = 0)")
         print("[3] Review all pending")
         print("[4] Review previous decisions")
-        print("[Q] Quit")
+        print("[b] Back")
 
         mode = input("> ").strip().lower()
 
-        if mode == "q":
-            connection.close()
+        if mode == "b":
             return
 
         score_filter = ""
@@ -283,10 +282,6 @@ class Review:
 
             if choice == "b":
                 return
-
-            if choice == "q":
-                connection.close()
-                raise SystemExit
 
             if choice not in ("v", "f", "i", "r"):
                 print("Invalid option.")
